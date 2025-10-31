@@ -3,6 +3,7 @@ import { AppShell } from '@/components/app-shell';
 import Logo from '@/components/navbar-components/logo';
 import NotificationMenu from '@/components/navbar-components/notification-menu';
 import UserMenu from '@/components/navbar-components/user-menu';
+import { Toaster } from "@/components/ui/sonner"
 import SecondaryNav from '@/components/secondary-nav';
 import {
     Breadcrumb,
@@ -12,7 +13,6 @@ import {
     BreadcrumbList,
     BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -23,17 +23,47 @@ import {
     Select,
     SelectContent,
     SelectItem,
+    SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { ChevronsUpDown } from 'lucide-react';
-import { Select as SelectPrimitive } from 'radix-ui';
 import type { BreadcrumbItem as TBreadcrumbItem } from '@/types';
 import type { PropsWithChildren } from 'react';
+import { router, usePage } from '@inertiajs/react';
+import { setUrlDefaults } from '@/wayfinder';
 
 export default function AppHeaderLayout(
-    props: PropsWithChildren<{ breadcrumbs?: TBreadcrumbItem[] }>,
+    props: PropsWithChildren<{ breadcrumbs?: TBreadcrumbItem[]; contentFullWidth?: boolean; contentClassName?: string }>,
 ) {
-    const { children } = props;
+    const { children, contentFullWidth, contentClassName } = props as PropsWithChildren<{ breadcrumbs?: TBreadcrumbItem[]; contentFullWidth?: boolean; contentClassName?: string }>;
+    const { props: pageProps } = usePage<{ auth?: { shops?: Array<{ id: number | string; name: string }> } }>();
+    const shops = pageProps.auth?.shops ?? [];
+    const firstId = shops.length > 0 ? String(shops[0].id) : undefined;
+
+    const currentShopId = (() => {
+        if (typeof window !== 'undefined') {
+            const match = window.location.pathname.match(/\/shops\/(\d+|[^/]+)/);
+            if (match) {
+                return String(match[1]);
+            }
+        }
+        return firstId;
+    })();
+
+    const handleShopChange = (newShopId: string): void => {
+        if (typeof window === 'undefined') {
+            return;
+        }
+        const { pathname, search, hash } = window.location;
+        const hasShopSegment = /\/shops\/[^/]+/.test(pathname);
+        const nextPath = hasShopSegment ? pathname.replace(/\/shops\/[^/]+/, `/shops/${newShopId}`) : `/shops/${newShopId}/products`;
+
+        setUrlDefaults({ shop: newShopId });
+        // Force a fresh render of the page/layout so the header Select updates immediately
+        router.visit(`${nextPath}${search}${hash}`, { preserveScroll: true, preserveState: false });
+    };
+
+    const selectValue = currentShopId ?? firstId;
+
     return (
         <AppShell>
             <header className="border-b px-26 md:px-28">
@@ -66,20 +96,16 @@ export default function AppHeaderLayout(
                                 </BreadcrumbItem>
                                 <BreadcrumbSeparator> / </BreadcrumbSeparator>
                                 <BreadcrumbItem>
-                                    {/* The dropdown values will be defined later */}
-                                    <Select defaultValue="1">
-                                        <SelectPrimitive.SelectTrigger aria-label="Select project" asChild>
-                                            <Button
-                                                variant="ghost"
-                                                className="h-8 px-1.5 text-foreground focus-visible:bg-accent focus-visible:ring-0"
-                                            >
-                                                <SelectValue placeholder="Select project" />
-                                                <ChevronsUpDown size={14} className="text-muted-foreground/80" />
-                                            </Button>
-                                        </SelectPrimitive.SelectTrigger>
+                                    <Select key={selectValue} value={selectValue} onValueChange={handleShopChange} disabled={shops.length === 0}>
+                                        <SelectTrigger aria-label="Selectionnez la boutique" className="h-8 px-1.5 text-foreground">
+                                            <SelectValue placeholder="Selectionnez la boutique" />
+                                        </SelectTrigger>
                                         <SelectContent className="[&_*[role=option]]:ps-2 [&_*[role=option]]:pe-8 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:end-2">
-                                            <SelectItem value="1">Main project</SelectItem>
-                                            <SelectItem value="2">Origin project</SelectItem>
+                                            {shops.map((shop) => (
+                                                <SelectItem key={shop.id} value={String(shop.id)}>
+                                                    {shop.name}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </BreadcrumbItem>
@@ -96,7 +122,8 @@ export default function AppHeaderLayout(
                 </div>
             </header>
             <SecondaryNav />
-            <AppContent>{children}</AppContent>
+            <AppContent fullWidth={contentFullWidth} className={contentClassName}>{children}</AppContent>
+            <Toaster />
         </AppShell>
     );
 }

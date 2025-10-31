@@ -2,22 +2,35 @@ import { Link, usePage } from '@inertiajs/react'
 import { cn, resolveUrl } from '@/lib/utils'
 import type { NavItem } from '@/types'
 import { Settings, LayoutDashboard, ShoppingCart, BarChart3 } from 'lucide-react'
+import { index as salesIndex } from '@/routes/shops/sales'
 
 interface SecondaryNavProps {
   items?: NavItem[]
   className?: string
 }
 
-// Default items with icons (Lucide)
-const defaultItems: NavItem[] = [
+// Keep a base template for default items; we'll inject dynamic hrefs at runtime
+const baseDefaultItems: NavItem[] = [
   { title: 'Configuration', href: '#', icon: Settings },
   { title: 'Tableau de bord', href: '#', icon: LayoutDashboard },
   { title: 'Vente', href: '#', icon: ShoppingCart },
   { title: 'Rapport', href: '#', icon: BarChart3 },
 ]
 
-export default function SecondaryNav({ items = defaultItems, className }: SecondaryNavProps) {
+export default function SecondaryNav({ items, className }: SecondaryNavProps) {
   const page = usePage()
+
+  // Derive current shop id from the URL (e.g. /shops/{id}/...)
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : (page.url as string)
+  const match = pathname.match(/\/shops\/(\d+|[^/]+)/)
+  const shopId = match ? match[1] : undefined
+
+  const computedItems: NavItem[] = (items ?? baseDefaultItems).map((it) => {
+    if (it.title === 'Vente' && shopId) {
+      return { ...it, href: salesIndex.url({ shop: Number.isNaN(Number(shopId)) ? (shopId as unknown as number) : Number(shopId) }) }
+    }
+    return it
+  })
 
   return (
     <nav
@@ -28,7 +41,7 @@ export default function SecondaryNav({ items = defaultItems, className }: Second
       )}
     >
       <div className="flex h-12 items-center gap-2 overflow-x-auto">
-        {items.map((item) => {
+        {computedItems.map((item) => {
           const href = resolveUrl(item.href)
           const isActive = item.isActive ?? page.url.startsWith(href)
           return (

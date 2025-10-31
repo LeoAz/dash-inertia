@@ -3,20 +3,27 @@ import * as React from 'react';
 
 interface AppContentProps extends React.ComponentProps<'main'> {
     variant?: 'header' | 'sidebar';
+    fullWidth?: boolean;
 }
 
 export function AppContent({
     variant = 'header',
+    fullWidth = false,
     children,
+    className,
     ...props
 }: AppContentProps) {
     if (variant === 'sidebar') {
         return <SidebarInset {...props}>{children}</SidebarInset>;
     }
 
+    const base = 'flex h-full w-full flex-1 flex-col gap-4';
+    const width = fullWidth ? 'max-w-none' : 'mx-auto max-w-7xl';
+    const radius = fullWidth ? '' : 'rounded-xl';
+
     return (
         <main
-            className="mx-auto flex h-full w-full max-w-7xl flex-1 flex-col gap-4 rounded-xl"
+            className={[base, width, radius, className].filter(Boolean).join(' ')}
             {...props}
         >
             {children}

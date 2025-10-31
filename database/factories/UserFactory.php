@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Shop;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -10,11 +12,6 @@ use Illuminate\Support\Str;
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
-
     /**
      * Define the model's default state.
      *
@@ -24,14 +21,29 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
+            'username' => fake()->boolean(70) ? fake()->unique()->userName() : null,
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => static::$password ??= 'password',
+            'password' => Hash::make('password'),
             'remember_token' => Str::random(10),
-            'two_factor_secret' => Str::random(10),
-            'two_factor_recovery_codes' => Str::random(10),
-            'two_factor_confirmed_at' => now(),
         ];
+    }
+
+    /**
+     * After creating hook to attach 1–2 shops.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function ($user) {
+            // Fetch 1–2 random existing shops; if none exist, create one fallback
+            $shopIds = Shop::query()->inRandomOrder()->limit(random_int(1, 2))->pluck('id');
+
+            if ($shopIds->isEmpty()) {
+                $shopIds = collect([Shop::factory()->create()->id]);
+            }
+
+            $user->shops()->syncWithoutDetaching($shopIds->all());
+        });
     }
 
     /**
@@ -41,18 +53,6 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
-        ]);
-    }
-
-    /**
-     * Indicate that the model does not have two-factor authentication configured.
-     */
-    public function withoutTwoFactor(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'two_factor_secret' => null,
-            'two_factor_recovery_codes' => null,
-            'two_factor_confirmed_at' => null,
         ]);
     }
 }

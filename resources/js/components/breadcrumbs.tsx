@@ -1,49 +1,50 @@
 import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
-import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
-import { Link } from '@inertiajs/react';
-import { Fragment } from 'react';
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb'
+import type { PropsWithChildren } from 'react'
 
-export function Breadcrumbs({
-    breadcrumbs,
-}: {
-    breadcrumbs: BreadcrumbItemType[];
-}) {
-    return (
-        <>
-            {breadcrumbs.length > 0 && (
-                <Breadcrumb>
-                    <BreadcrumbList>
-                        {breadcrumbs.map((item, index) => {
-                            const isLast = index === breadcrumbs.length - 1;
-                            return (
-                                <Fragment key={index}>
-                                    <BreadcrumbItem>
-                                        {isLast ? (
-                                            <BreadcrumbPage>
-                                                {item.title}
-                                            </BreadcrumbPage>
-                                        ) : (
-                                            <BreadcrumbLink asChild>
-                                                <Link href={item.href}>
-                                                    {item.title}
-                                                </Link>
-                                            </BreadcrumbLink>
-                                        )}
-                                    </BreadcrumbItem>
-                                    {!isLast && <BreadcrumbSeparator />}
-                                </Fragment>
-                            );
-                        })}
-                    </BreadcrumbList>
-                </Breadcrumb>
-            )}
-        </>
-    );
+export type Crumb = {
+  title: string
+  href?: string
+}
+
+interface BreadcrumbsProps {
+  items?: Crumb[]
+}
+
+export default function Breadcrumbs({ items }: PropsWithChildren<BreadcrumbsProps>) {
+  if (!items || items.length === 0) {
+    return null
+  }
+
+  return (
+    <Breadcrumb>
+      <BreadcrumbList>
+        {items.map((item, idx) => (
+          <FragmentWithSeparator key={`${item.title}-${idx}`} showSeparator={idx > 0}>
+            <BreadcrumbItem>
+              {item.href ? (
+                <BreadcrumbLink href={item.href}>{item.title}</BreadcrumbLink>
+              ) : (
+                <span className="text-muted-foreground">{item.title}</span>
+              )}
+            </BreadcrumbItem>
+          </FragmentWithSeparator>
+        ))}
+      </BreadcrumbList>
+    </Breadcrumb>
+  )
+}
+
+function FragmentWithSeparator({ children, showSeparator }: PropsWithChildren<{ showSeparator?: boolean }>) {
+  return (
+    <>
+      {showSeparator && <BreadcrumbSeparator> / </BreadcrumbSeparator>}
+      {children}
+    </>
+  )
 }
