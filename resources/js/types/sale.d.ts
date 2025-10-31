@@ -49,6 +49,8 @@ export interface SalesPageProps extends PageProps {
     sort?: 'receipt_number' | 'sale_date' | 'customer_name' | 'hairdresser_name' | 'total_amount' | null
     dir?: 'asc' | 'desc' | null
     perPage?: number | null
+    date_from?: string | null
+    date_to?: string | null
   }
   shop: { id: number | string; name?: string }
   products: Array<{ id: number; name: string; price: number }>

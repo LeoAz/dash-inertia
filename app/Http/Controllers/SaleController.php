@@ -21,6 +21,136 @@ use Inertia\Response;
 
 class SaleController extends Controller
 {
+    public function history(Shop $shop, Request $request): Response
+    {
+        $q = (string) $request->string('q')->toString();
+        $perPage = (int) ($request->integer('perPage') ?: 20);
+        $perPage = $perPage > 0 && $perPage <= 100 ? $perPage : 20;
+
+        $sort = (string) $request->string('sort')->toString();
+        $dir = strtolower((string) $request->string('dir')->toString());
+        $dir = in_array($dir, ['asc', 'desc'], true) ? $dir : 'desc';
+
+        // Allowlist of sortable fields
+        $sortable = ['receipt_number', 'sale_date', 'customer_name', 'total_amount', 'hairdresser_name'];
+        if (! in_array($sort, $sortable, true)) {
+            $sort = 'sale_date';
+        }
+
+        $dateFrom = (string) $request->string('date_from')->toString();
+        $dateTo = (string) $request->string('date_to')->toString();
+
+        $query = Sale::query()
+            ->where('sales.shop_id', $shop->id)
+            ->leftJoin('receipts', 'receipts.sale_id', '=', 'sales.id')
+            ->with([
+                'hairdresser:id,name',
+                'receipt',
+                'promotion:id,name,percentage,amount,starts_at,ends_at,days_of_week',
+                'products',
+                'services',
+            ])
+            ->select('sales.*');
+
+        if ($q !== '') {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('receipts.receipt_number', 'like', "%{$q}%")
+                    ->orWhere('sales.customer_name', 'like', "%{$q}%")
+                    ->orWhereHas('hairdresser', function ($h) use ($q) {
+                        $h->where('name', 'like', "%{$q}%");
+                    });
+            });
+        }
+
+        if ($dateFrom !== '') {
+            $query->whereDate('sales.sale_date', '>=', $dateFrom);
+        }
+        if ($dateTo !== '') {
+            $query->whereDate('sales.sale_date', '<=', $dateTo);
+        }
+
+        if ($sort === 'hairdresser_name') {
+            $query->leftJoin('hairdressers', 'hairdressers.id', '=', 'sales.hairdresser_id')
+                ->select('sales.*')
+                ->orderBy('hairdressers.name', $dir)
+                ->orderBy('sales.id', 'desc');
+        } elseif ($sort === 'receipt_number') {
+            $query->orderBy('receipts.receipt_number', $dir)->orderBy('sales.id', 'desc');
+        } else {
+            $query->orderBy("sales.$sort", $dir)->orderBy('sales.id', 'desc');
+        }
+
+        /** @var LengthAwarePaginator $paginator */
+        $paginator = $query->paginate($perPage)->appends($request->query());
+
+        $sales = $paginator->through(function (Sale $s) {
+            $productItems = $s->relationLoaded('products')
+                ? $s->products->map(function ($p) {
+                    return [
+                        'type' => 'product',
+                        'name' => (string) ($p->name ?? ''),
+                        'quantity' => (int) ($p->pivot->quantity ?? 1),
+                        'unit_price' => (float) ($p->pivot->unit_price ?? $p->price ?? 0),
+                        'line_subtotal' => (float) ($p->pivot->subtotal ?? (($p->pivot->unit_price ?? $p->price ?? 0) * max(1, (int) ($p->pivot->quantity ?? 1)))),
+                    ];
+                })->all()
+                : [];
+
+            $serviceItems = $s->relationLoaded('services')
+                ? $s->services->map(function ($srv) {
+                    return [
+                        'type' => 'service',
+                        'name' => (string) ($srv->name ?? ''),
+                        'price' => (float) ($srv->pivot->unit_price ?? $srv->price ?? 0),
+                    ];
+                })->all()
+                : [];
+
+            $promotion = $s->promotion;
+            $promotionLabel = $promotion?->name;
+            if (! $promotionLabel && $promotion) {
+                $pct = (float) ($promotion->percentage ?? 0);
+                $amt = (float) ($promotion->amount ?? 0);
+                if ($pct > 0) {
+                    $promotionLabel = $pct.'%';
+                } elseif ($amt > 0) {
+                    $promotionLabel = number_format($amt, 0, ',', ' ').' XOF';
+                } else {
+                    $promotionLabel = __('Promotion');
+                }
+            }
+
+            return [
+                'id' => $s->id,
+                'shop_id' => $s->shop_id,
+                'receipt_number' => optional($s->receipt)->receipt_number,
+                'customer_name' => $s->customer_name,
+                'hairdresser_name' => optional($s->hairdresser)->name,
+                'total_amount' => (float) $s->total_amount,
+                'sale_date' => optional($s->sale_date)?->toISOString() ?? now()->toISOString(),
+                'promotion_applied' => ! is_null($s->promotion_id),
+                'promotion_label' => $promotionLabel,
+                'details' => array_values(array_merge($productItems, $serviceItems)),
+            ];
+        });
+
+        return Inertia::render('sales/all-sales', [
+            'sales' => $sales,
+            'filters' => [
+                'q' => $q,
+                'sort' => $sort,
+                'dir' => $dir,
+                'perPage' => $perPage,
+                'date_from' => $dateFrom !== '' ? $dateFrom : null,
+                'date_to' => $dateTo !== '' ? $dateTo : null,
+            ],
+            'shop' => [
+                'id' => $shop->id,
+                'name' => $shop->name,
+            ],
+        ]);
+    }
+
     public function show(Shop $shop, Sale $sale)
     {
         abort_if((int) $sale->shop_id !== (int) $shop->id, 404);
@@ -68,6 +198,7 @@ class SaleController extends Controller
 
         $query = Sale::query()
             ->where('sales.shop_id', $shop->id)
+            ->whereDate('sales.sale_date', today())
             ->leftJoin('receipts', 'receipts.sale_id', '=', 'sales.id')
             ->with([
                 'hairdresser:id,name',

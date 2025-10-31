@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HairdresserController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PromotionController;
@@ -23,11 +24,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('shops/{shop}')
         ->as('shops.')
         ->group(function () {
+            // Shop dashboard
+            Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
             Route::resource('products', ProductController::class);
             Route::resource('services', ServiceController::class);
             Route::resource('hairdressers', HairdresserController::class);
             Route::resource('promotions', PromotionController::class);
+            // Sales routes
+            Route::get('sales/history', [SaleController::class, 'history'])->name('sales.history');
             Route::resource('sales', SaleController::class)->only(['index', 'store', 'update', 'show', 'destroy']);
+
+            // Reports routes
+            Route::prefix('reports')->as('reports.')->group(function () {
+                \App\Http\Controllers\ReportController::routes();
+            });
         });
 });
 

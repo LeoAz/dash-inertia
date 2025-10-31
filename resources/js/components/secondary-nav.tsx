@@ -1,8 +1,11 @@
 import { Link, usePage } from '@inertiajs/react'
 import { cn, resolveUrl } from '@/lib/utils'
 import type { NavItem } from '@/types'
-import { Settings, LayoutDashboard, ShoppingCart, BarChart3 } from 'lucide-react'
+import { Settings, LayoutDashboard, ShoppingCart, BarChart3, History } from 'lucide-react'
 import { index as salesIndex } from '@/routes/shops/sales'
+import { index as productsIndex } from '@/routes/shops/products'
+import reports from '@/routes/shops/reports'
+import { dashboard as shopDashboard } from '@/routes/shops'
 
 interface SecondaryNavProps {
   items?: NavItem[]
@@ -14,6 +17,7 @@ const baseDefaultItems: NavItem[] = [
   { title: 'Configuration', href: '#', icon: Settings },
   { title: 'Tableau de bord', href: '#', icon: LayoutDashboard },
   { title: 'Vente', href: '#', icon: ShoppingCart },
+  { title: 'Historique des ventes', href: '#', icon: History },
   { title: 'Rapport', href: '#', icon: BarChart3 },
 ]
 
@@ -26,8 +30,23 @@ export default function SecondaryNav({ items, className }: SecondaryNavProps) {
   const shopId = match ? match[1] : undefined
 
   const computedItems: NavItem[] = (items ?? baseDefaultItems).map((it) => {
-    if (it.title === 'Vente' && shopId) {
-      return { ...it, href: salesIndex.url({ shop: Number.isNaN(Number(shopId)) ? (shopId as unknown as number) : Number(shopId) }) }
+    if (shopId) {
+      const numericShop = Number.isNaN(Number(shopId)) ? (shopId as unknown as number) : Number(shopId)
+      if (it.title === 'Tableau de bord') {
+        return { ...it, href: shopDashboard.url({ shop: numericShop }) }
+      }
+      if (it.title === 'Configuration') {
+        return { ...it, href: productsIndex.url({ shop: numericShop }) }
+      }
+      if (it.title === 'Vente') {
+        return { ...it, href: salesIndex.url({ shop: numericShop }) }
+      }
+      if (it.title === 'Historique des ventes') {
+        return { ...it, href: `/shops/${numericShop}/sales/history` }
+      }
+      if (it.title === 'Rapport') {
+        return { ...it, href: reports.products.url({ shop: numericShop }) }
+      }
     }
     return it
   })
