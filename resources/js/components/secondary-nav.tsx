@@ -22,14 +22,19 @@ const baseDefaultItems: NavItem[] = [
 ]
 
 export default function SecondaryNav({ items, className }: SecondaryNavProps) {
-  const page = usePage()
+  const page = usePage<{ auth?: { user?: { roles?: string[] } } }>()
+
+  // Current user roles from shared Inertia props
+  const roles: string[] = page.props.auth?.user?.roles ?? []
+  const isVendeur = roles.includes('vendeur')
 
   // Derive current shop id from the URL (e.g. /shops/{id}/...)
   const pathname = typeof window !== 'undefined' ? window.location.pathname : (page.url as string)
   const match = pathname.match(/\/shops\/(\d+|[^/]+)/)
   const shopId = match ? match[1] : undefined
 
-  const computedItems: NavItem[] = (items ?? baseDefaultItems).map((it) => {
+  // Build items with dynamic hrefs
+  let computedItems: NavItem[] = (items ?? baseDefaultItems).map((it) => {
     if (shopId) {
       const numericShop = Number.isNaN(Number(shopId)) ? (shopId as unknown as number) : Number(shopId)
       if (it.title === 'Tableau de bord') {
@@ -50,6 +55,12 @@ export default function SecondaryNav({ items, className }: SecondaryNavProps) {
     }
     return it
   })
+
+  // Restrict menu for role "vendeur": keep only Sales and Sales History
+  if (isVendeur) {
+    const allowed = new Set(['Vente', 'Historique des ventes'])
+    computedItems = computedItems.filter((it) => allowed.has(it.title))
+  }
 
   return (
     <nav

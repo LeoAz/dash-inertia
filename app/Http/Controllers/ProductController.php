@@ -36,6 +36,11 @@ class ProductController extends Controller
     public function create(Request $request, Shop $shop): InertiaResponse
     {
         $this->authorizeShop($request, $shop);
+        // Only Super admin or Admin attached to the shop can create
+        $user = $request->user();
+        $isSuper = $user?->hasRole('Super admin') ?? false;
+        $isAdmin = ($user?->hasRole('admin') ?? false) && ($user?->shops()->whereKey($shop->id)->exists() ?? false);
+        abort_unless($isSuper || $isAdmin, 403);
 
         return Inertia::render('products/create', [
             'shop' => [
@@ -48,6 +53,11 @@ class ProductController extends Controller
     public function store(StoreProductRequest $request, Shop $shop): RedirectResponse
     {
         $this->authorizeShop($request, $shop);
+        // Only Super admin or Admin attached to the shop can store
+        $user = $request->user();
+        $isSuper = $user?->hasRole('Super admin') ?? false;
+        $isAdmin = ($user?->hasRole('admin') ?? false) && ($user?->shops()->whereKey($shop->id)->exists() ?? false);
+        abort_unless($isSuper || $isAdmin, 403);
 
         $payload = $request->validated();
         $payload['shop_id'] = $shop->id;
@@ -74,6 +84,11 @@ class ProductController extends Controller
     public function edit(Request $request, Shop $shop, Product $product): InertiaResponse
     {
         $this->authorizeShop($request, $shop);
+        // Only Super admin or Admin attached to the shop can edit
+        $user = $request->user();
+        $isSuper = $user?->hasRole('Super admin') ?? false;
+        $isAdmin = ($user?->hasRole('admin') ?? false) && ($user?->shops()->whereKey($shop->id)->exists() ?? false);
+        abort_unless($isSuper || $isAdmin, 403);
 
         return Inertia::render('products/edit', [
             'shop' => [
@@ -87,6 +102,11 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, Shop $shop, Product $product): RedirectResponse
     {
         $this->authorizeShop($request, $shop);
+        // Only Super admin or Admin attached to the shop can update
+        $user = $request->user();
+        $isSuper = $user?->hasRole('Super admin') ?? false;
+        $isAdmin = ($user?->hasRole('admin') ?? false) && ($user?->shops()->whereKey($shop->id)->exists() ?? false);
+        abort_unless($isSuper || $isAdmin, 403);
 
         $product->update($request->validated());
 
@@ -106,7 +126,14 @@ class ProductController extends Controller
 
     protected function authorizeShop(Request $request, Shop $shop): void
     {
-        $hasAccess = $request->user()?->shops()->whereKey($shop->id)->exists() ?? false;
+        $user = $request->user();
+        $isSuper = $user?->hasRole('Super admin') ?? false;
+
+        if ($isSuper) {
+            return; // Super admin can access all shops
+        }
+
+        $hasAccess = $user?->shops()->whereKey($shop->id)->exists() ?? false;
 
         abort_unless($hasAccess, 403);
     }

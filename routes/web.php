@@ -4,16 +4,16 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HairdresserController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\ShopController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use Laravel\Fortify\Features;
 
 Route::get('/', function () {
-    return Inertia::render('welcome', [
-        'canRegister' => Features::enabled(Features::registration()),
-    ]);
+    return to_route('dashboard');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -24,7 +24,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('shops/{shop}')
         ->as('shops.')
         ->group(function () {
-            // Shop dashboard
             Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
             Route::resource('products', ProductController::class);
@@ -37,9 +36,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             // Reports routes
             Route::prefix('reports')->as('reports.')->group(function () {
-                \App\Http\Controllers\ReportController::routes();
+                ReportController::routes();
             });
         });
+
+    // Admin CRUD (top-level admin scope)
+    Route::prefix('admin')->as('admin.')->group(function () {
+        Route::resource('shops', ShopController::class);
+        Route::resource('users', UserController::class)->middleware('role:Super admin');
+    });
 });
 
 require __DIR__.'/settings.php';

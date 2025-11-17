@@ -105,8 +105,16 @@ class HairdresserController extends Controller
 
     protected function authorizeShop(Request $request, Shop $shop): void
     {
-        $hasAccess = $request->user()?->shops()->whereKey($shop->id)->exists() ?? false;
+        $user = $request->user();
+        if ($user?->hasRole('Super admin')) {
+            // Super admin can access all shops
+            return;
+        }
 
-        abort_unless($hasAccess, 403);
+        // Admins must be attached to the shop to access
+        $isAdmin = $user?->hasRole('admin') ?? false;
+        $isAttached = $user?->shops()->whereKey($shop->id)->exists() ?? false;
+
+        abort_unless($isAdmin && $isAttached, 403);
     }
 }

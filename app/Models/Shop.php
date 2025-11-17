@@ -12,6 +12,16 @@ class Shop extends Model
     /** @use HasFactory<\Database\Factories\ShopFactory> */
     use HasFactory;
 
+    /**
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'name',
+        'address',
+        'phone',
+        'email',
+    ];
+
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);

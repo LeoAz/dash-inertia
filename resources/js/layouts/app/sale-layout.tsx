@@ -35,7 +35,7 @@ import {
     ListFilterIcon,
     EyeIcon,
     EditIcon,
-    TrashIcon
+    TrashIcon, PrinterIcon
 } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import type { SaleRow } from '@/types/sale';
@@ -141,6 +141,10 @@ function useConfirmDelete() {
 }
 
 function SalesDataTable({ rows, onEdit, onView }: { rows: SaleRow[]; onEdit?: (row: SaleRow) => void; onView?: (row: SaleRow) => void }) {
+    const { props } = usePage<{ auth?: { user?: { roles?: string[] } } }>();
+    const roles = props.auth?.user?.roles ?? [];
+    const canEdit = roles.includes('Super admin') || roles.includes('admin') || roles.includes('vendeur');
+    const canDelete = roles.includes('Super admin') || roles.includes('admin');
     const [globalFilter, setGlobalFilter] = useState('');
     const [sorting, setSorting] = useState<SortingState>([{ id: 'sale_date', desc: true }]);
     const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
@@ -270,27 +274,34 @@ function SalesDataTable({ rows, onEdit, onView }: { rows: SaleRow[]; onEdit?: (r
                         className="h-7 w-7 p-0"
                         onClick={() => onView?.(row.original)}
                         aria-label="Détails"
+                        title="Détails"
                     >
-                        <EyeIcon className="h-4 w-4" />
+                        <PrinterIcon className="h-4 w-4" />
                     </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => onEdit?.(row.original)}
-                        aria-label="Modifier"
-                    >
-                        <EditIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => confirmDelete(row.original)}
-                        aria-label="Supprimer"
-                    >
-                        <TrashIcon className="h-4 w-4" />
-                    </Button>
+                    {canEdit && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => onEdit?.(row.original)}
+                            aria-label="Modifier"
+                            title="Modifier"
+                        >
+                            <EditIcon className="h-4 w-4" />
+                        </Button>
+                    )}
+                    {canDelete && (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => confirmDelete(row.original)}
+                            aria-label="Supprimer"
+                            title="Supprimer"
+                        >
+                            <TrashIcon className="h-4 w-4" />
+                        </Button>
+                    )}
                 </div>
             ),
         },
@@ -420,6 +431,7 @@ function SalesDataTable({ rows, onEdit, onView }: { rows: SaleRow[]; onEdit?: (r
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
         </>
     );
 }

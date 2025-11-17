@@ -34,12 +34,17 @@ class DatabaseSeeder extends Seeder
             $testUser->shops()->syncWithoutDetaching($shopIds);
         }
 
-        // 3) Seed additional users (factory will attach 1–2 shops automatically)
+        // 3) Seed roles and assign Super admin to the first user
+        $this->call([
+            RolesSeeder::class,
+        ]);
+
+        // 4) Seed additional users (factory will attach 1–2 shops automatically)
         $this->call([
             UserSeeder::class,
         ]);
 
-        // 4) Seed remaining demo data
+        // 5) Seed remaining demo data
         $this->call([
             HairdresserSeeder::class,
             ProductSeeder::class,

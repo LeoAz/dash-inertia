@@ -25,8 +25,12 @@ interface ShopConfigLayoutProps {
 }
 
 export default function ShopConfigLayout({ children, breadcrumbs, title, shopId }: PropsWithChildren<ShopConfigLayoutProps>) {
-    const page = usePage<{ shop?: { id: number | string } }>();
+    const page = usePage<{ shop?: { id: number | string }, auth?: { user?: { roles?: string[] } } }>();
     const { url, props } = page;
+
+    // Roles for access control: only admin and Super admin see full shop config menu
+    const roles: string[] = props?.auth?.user?.roles ?? [];
+    const isAdminOrSuper = roles.includes('admin') || roles.includes('Super admin');
 
     const effectiveShopId = useMemo(() => {
         if (shopId !== undefined && shopId !== null) {
@@ -49,6 +53,9 @@ export default function ShopConfigLayout({ children, breadcrumbs, title, shopId 
     }, [effectiveShopId]);
 
     const items: MenuItem[] = useMemo(() => {
+        if (!isAdminOrSuper) {
+            return [];
+        }
         return [
             {
                 key: 'products',
@@ -75,7 +82,7 @@ export default function ShopConfigLayout({ children, breadcrumbs, title, shopId 
                 disabled: effectiveShopId === undefined,
             },
         ];
-    }, [effectiveShopId]);
+    }, [effectiveShopId, isAdminOrSuper]);
 
     const pathname = typeof window !== 'undefined' ? window.location.pathname : url;
 

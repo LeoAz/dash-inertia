@@ -30,3 +30,20 @@ it('shares shops for the authenticated user', function () {
         ->and(collect($shared['auth']['shops'])->pluck('id')->sort()->values()->all())
         ->toEqualCanonicalizing($shops->pluck('id')->sort()->values()->all());
 });
+
+it('shares user roles for the authenticated user', function () {
+    $user = User::factory()->create();
+    // Assign a role
+    \Spatie\Permission\Models\Role::findOrCreate('vendeur');
+    $user->assignRole('vendeur');
+
+    $request = Request::create('/', 'GET');
+    $request->setUserResolver(fn () => $user);
+
+    $middleware = app(HandleInertiaRequests::class);
+    $shared = $middleware->share($request);
+
+    expect($shared['auth']['user']->roles)
+        ->toBeArray()
+        ->toContain('vendeur');
+});

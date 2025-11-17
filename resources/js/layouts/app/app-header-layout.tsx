@@ -1,7 +1,6 @@
 import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import Logo from '@/components/navbar-components/logo';
-import NotificationMenu from '@/components/navbar-components/notification-menu';
 import UserMenu from '@/components/navbar-components/user-menu';
 import { Toaster } from "@/components/ui/sonner"
 import SecondaryNav from '@/components/secondary-nav';
@@ -28,13 +27,13 @@ import {
 } from '@/components/ui/select';
 import type { BreadcrumbItem as TBreadcrumbItem } from '@/types';
 import type { PropsWithChildren } from 'react';
-import { router, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { setUrlDefaults } from '@/wayfinder';
 
 export default function AppHeaderLayout(
-    props: PropsWithChildren<{ breadcrumbs?: TBreadcrumbItem[]; contentFullWidth?: boolean; contentClassName?: string }>,
+    props: PropsWithChildren<{ breadcrumbs?: TBreadcrumbItem[]; contentFullWidth?: boolean; contentClassName?: string; hideSecondaryNav?: boolean }>,
 ) {
-    const { children, contentFullWidth, contentClassName } = props as PropsWithChildren<{ breadcrumbs?: TBreadcrumbItem[]; contentFullWidth?: boolean; contentClassName?: string }>;
+    const { children, contentFullWidth, contentClassName, hideSecondaryNav } = props as PropsWithChildren<{ breadcrumbs?: TBreadcrumbItem[]; contentFullWidth?: boolean; contentClassName?: string; hideSecondaryNav?: boolean }>;
     const { props: pageProps } = usePage<{ auth?: { shops?: Array<{ id: number | string; name: string }> } }>();
     const shops = pageProps.auth?.shops ?? [];
     const firstId = shops.length > 0 ? String(shops[0].id) : undefined;
@@ -114,16 +113,36 @@ export default function AppHeaderLayout(
                     </div>
                     {/* Right side */}
                     <div className="flex items-center gap-4">
-                        {/* Notification */}
-                        <NotificationMenu />
+                        {/* Quick admin links (Super admin only) */}
+                        <HeaderAdminLinks />
                         {/* User menu */}
                         <UserMenu />
                     </div>
                 </div>
             </header>
-            <SecondaryNav />
+            {!hideSecondaryNav && <SecondaryNav /> }
             <AppContent fullWidth={contentFullWidth} className={contentClassName}>{children}</AppContent>
             <Toaster />
         </AppShell>
+    );
+}
+
+function HeaderAdminLinks() {
+    const { props } = usePage<{ auth?: { user?: { roles?: string[] } } }>();
+    const roles = props.auth?.user?.roles ?? [];
+    const isSuper = roles.includes('Super admin');
+    if (!isSuper) {
+        return null;
+    }
+    return (
+        <nav className="flex items-center gap-3 max-sm:hidden">
+            <Link href="/admin/users" className="text-sm text-muted-foreground hover:text-foreground">
+                Accès utilisateurs
+            </Link>
+            <span className="text-muted-foreground/50">|</span>
+            <Link href="/admin/shops" className="text-sm text-muted-foreground hover:text-foreground">
+                Gestion boutique
+            </Link>
+        </nav>
     );
 }

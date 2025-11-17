@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import type { SaleRow } from '@/types/sale'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -100,7 +100,7 @@ export default function SaleDetails({ open, onOpenChange, sale, shop }: SaleDeta
                         <SheetTitle>Reçu N°{receiptNumber}</SheetTitle>
                         <div className="flex items-center gap-2">
                             <Button variant="outline" onClick={() => onOpenChange(false)}>Fermer</Button>
-                            <Button onClick={printTicket} disabled={!sale}>🖨️ Imprimer</Button>
+                            <Button onClick={printTicket} disabled={!sale}>Imprimer</Button>
                         </div>
                     </div>
                 </SheetHeader>
@@ -207,7 +207,7 @@ function generatePrintContent({ sale, shop, qrSvgString, promotionAmount }: {
     const subtotal = productsSubtotal + servicesSubtotal
     const total = Number(sale.total_amount ?? 0)
 
-    const defaultLogo = '/logo.png'
+    const defaultLogo = '/img/logo 1.png'
 
     return `<!DOCTYPE html>
 <html lang="fr">
@@ -236,7 +236,7 @@ function generatePrintContent({ sale, shop, qrSvgString, promotionAmount }: {
     }
     .logo {
       max-width: 100%;
-      max-height: 60px;
+      max-height: 40px;
       margin: 0 auto 8px;
       display: block;
     }
@@ -244,6 +244,12 @@ function generatePrintContent({ sale, shop, qrSvgString, promotionAmount }: {
       font-size: 16px;
       font-weight: bold;
       margin-bottom: 4px;
+    }
+    .receipt-number {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin: 6px 0 2px;
     }
     .info { font-size: 10px; margin-bottom: 2px; }
     .section {
@@ -313,7 +319,7 @@ function generatePrintContent({ sale, shop, qrSvgString, promotionAmount }: {
       <img src="${shop?.logo_url || defaultLogo}" alt="Logo" class="logo" onerror="this.style.display='none'">
       ${shop?.name ? `<div class="shop-name">${escapeHtml(shop.name)}</div>` : ''}
       <div class="info">${new Date(sale.sale_date).toLocaleString('fr-FR')}</div>
-      ${sale.receipt_number ? `<div class="info">Reçu N° ${escapeHtml(String(sale.receipt_number))}</div>` : ''}
+      <div class="receipt-number">REÇU N° ${escapeHtml(String(sale.receipt_number ?? `000-${sale.id}`))}</div>
       ${shop?.phone ? `<div class="info">Tél: ${escapeHtml(shop.phone)}</div>` : ''}
       ${shop?.address ? `<div class="info">${escapeHtml(shop.address)}</div>` : ''}
       ${sale.customer_name ? `<div class="info">Client: ${escapeHtml(sale.customer_name)}</div>` : ''}

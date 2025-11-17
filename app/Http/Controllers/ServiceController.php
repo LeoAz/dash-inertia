@@ -35,6 +35,11 @@ class ServiceController extends Controller
     public function create(Request $request, Shop $shop): InertiaResponse
     {
         $this->authorizeShop($request, $shop);
+        // Only Super admin or Admin attached to the shop can create
+        $user = $request->user();
+        $isSuper = $user?->hasRole('Super admin') ?? false;
+        $isAdmin = ($user?->hasRole('admin') ?? false) && ($user?->shops()->whereKey($shop->id)->exists() ?? false);
+        abort_unless($isSuper || $isAdmin, 403);
 
         return Inertia::render('services/create', [
             'shop' => [
@@ -105,8 +110,16 @@ class ServiceController extends Controller
 
     protected function authorizeShop(Request $request, Shop $shop): void
     {
-        $hasAccess = $request->user()?->shops()->whereKey($shop->id)->exists() ?? false;
+        $user = $request->user();
+        if ($user?->hasRole('Super admin')) {
+            // Super admin can access all shops
+            return;
+        }
 
-        abort_unless($hasAccess, 403);
+        // Admins must be attached to the shop to access
+        $isAdmin = $user?->hasRole('admin') ?? false;
+        $isAttached = $user?->shops()->whereKey($shop->id)->exists() ?? false;
+
+        abort_unless($isAdmin && $isAttached, 403);
     }
 }

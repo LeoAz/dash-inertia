@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateSaleRequest;
 use App\Models\Hairdresser;
 use App\Models\Product;
 use App\Models\Promotion;
+use App\Models\Receipt;
 use App\Models\Sale;
 use App\Models\Service;
 use App\Models\Shop;
@@ -83,55 +84,8 @@ class SaleController extends Controller
         /** @var LengthAwarePaginator $paginator */
         $paginator = $query->paginate($perPage)->appends($request->query());
 
-        $sales = $paginator->through(function (Sale $s) {
-            $productItems = $s->relationLoaded('products')
-                ? $s->products->map(function ($p) {
-                    return [
-                        'type' => 'product',
-                        'name' => (string) ($p->name ?? ''),
-                        'quantity' => (int) ($p->pivot->quantity ?? 1),
-                        'unit_price' => (float) ($p->pivot->unit_price ?? $p->price ?? 0),
-                        'line_subtotal' => (float) ($p->pivot->subtotal ?? (($p->pivot->unit_price ?? $p->price ?? 0) * max(1, (int) ($p->pivot->quantity ?? 1)))),
-                    ];
-                })->all()
-                : [];
-
-            $serviceItems = $s->relationLoaded('services')
-                ? $s->services->map(function ($srv) {
-                    return [
-                        'type' => 'service',
-                        'name' => (string) ($srv->name ?? ''),
-                        'price' => (float) ($srv->pivot->unit_price ?? $srv->price ?? 0),
-                    ];
-                })->all()
-                : [];
-
-            $promotion = $s->promotion;
-            $promotionLabel = $promotion?->name;
-            if (! $promotionLabel && $promotion) {
-                $pct = (float) ($promotion->percentage ?? 0);
-                $amt = (float) ($promotion->amount ?? 0);
-                if ($pct > 0) {
-                    $promotionLabel = $pct.'%';
-                } elseif ($amt > 0) {
-                    $promotionLabel = number_format($amt, 0, ',', ' ').' XOF';
-                } else {
-                    $promotionLabel = __('Promotion');
-                }
-            }
-
-            return [
-                'id' => $s->id,
-                'shop_id' => $s->shop_id,
-                'receipt_number' => optional($s->receipt)->receipt_number,
-                'customer_name' => $s->customer_name,
-                'hairdresser_name' => optional($s->hairdresser)->name,
-                'total_amount' => (float) $s->total_amount,
-                'sale_date' => optional($s->sale_date)?->toISOString() ?? now()->toISOString(),
-                'promotion_applied' => ! is_null($s->promotion_id),
-                'promotion_label' => $promotionLabel,
-                'details' => array_values(array_merge($productItems, $serviceItems)),
-            ];
+        $sales = $paginator->through(function (Sale $s) use ($request) {
+            return (new \App\Http\Resources\SaleResource($s))->toArray($request);
         });
 
         return Inertia::render('sales/all-sales', [
@@ -234,56 +188,8 @@ class SaleController extends Controller
         /** @var LengthAwarePaginator $paginator */
         $paginator = $query->paginate($perPage)->appends($request->query());
 
-        $sales = $paginator->through(function (Sale $s) {
-            // Build details from related products/services
-            $productItems = $s->relationLoaded('products')
-                ? $s->products->map(function ($p) {
-                    return [
-                        'type' => 'product',
-                        'name' => (string) ($p->name ?? ''),
-                        'quantity' => (int) ($p->pivot->quantity ?? 1),
-                        'unit_price' => (float) ($p->pivot->unit_price ?? $p->price ?? 0),
-                        'line_subtotal' => (float) ($p->pivot->subtotal ?? (($p->pivot->unit_price ?? $p->price ?? 0) * max(1, (int) ($p->pivot->quantity ?? 1)))),
-                    ];
-                })->all()
-                : [];
-
-            $serviceItems = $s->relationLoaded('services')
-                ? $s->services->map(function ($srv) {
-                    return [
-                        'type' => 'service',
-                        'name' => (string) ($srv->name ?? ''),
-                        'price' => (float) ($srv->pivot->unit_price ?? $srv->price ?? 0),
-                    ];
-                })->all()
-                : [];
-
-            $promotion = $s->promotion;
-            $promotionLabel = $promotion?->name;
-            if (! $promotionLabel && $promotion) {
-                $pct = (float) ($promotion->percentage ?? 0);
-                $amt = (float) ($promotion->amount ?? 0);
-                if ($pct > 0) {
-                    $promotionLabel = $pct.'%';
-                } elseif ($amt > 0) {
-                    $promotionLabel = number_format($amt, 0, ',', ' ').' XOF';
-                } else {
-                    $promotionLabel = __('Promotion');
-                }
-            }
-
-            return [
-                'id' => $s->id,
-                'shop_id' => $s->shop_id,
-                'receipt_number' => optional($s->receipt)->receipt_number,
-                'customer_name' => $s->customer_name,
-                'hairdresser_name' => optional($s->hairdresser)->name,
-                'total_amount' => (float) $s->total_amount,
-                'sale_date' => optional($s->sale_date)?->toISOString() ?? now()->toISOString(),
-                'promotion_applied' => ! is_null($s->promotion_id),
-                'promotion_label' => $promotionLabel,
-                'details' => array_values(array_merge($productItems, $serviceItems)),
-            ];
+        $sales = $paginator->through(function (Sale $s) use ($request) {
+            return (new \App\Http\Resources\SaleResource($s))->toArray($request);
         });
 
         return Inertia::render('sales/index', [
@@ -486,6 +392,36 @@ class SaleController extends Controller
             $sale->total_amount = round(max(0.0, $gross - $discount), 2);
             $sale->save();
 
+            // Ensure a receipt exists for this sale
+            if (! $sale->receipt) {
+                // Generate a unique receipt number with retry in the unlikely event of collision
+                $maxAttempts = 5;
+                $attempt = 0;
+                $receiptNumber = null;
+                do {
+                    $attempt++;
+                    $prefix = 'RC';
+                    $datePart = now()->format('Ymd');
+                    $shopPart = str_pad((string) $shop->id, 2, '0', STR_PAD_LEFT);
+                    $random = Str::upper(Str::random(5));
+                    $candidate = sprintf('%s-%s-%s-%s', $prefix, $datePart, $shopPart, $random);
+
+                    $exists = Receipt::query()->where('receipt_number', $candidate)->exists();
+                    if (! $exists) {
+                        $receiptNumber = $candidate;
+                        break;
+                    }
+                } while ($attempt < $maxAttempts);
+
+                $receipt = new Receipt;
+                $receipt->sale_id = $sale->id;
+                $receipt->shop_id = $shop->id;
+                $receipt->receipt_number = $receiptNumber ?? (string) Str::uuid();
+                $receipt->generated_by = $user?->id;
+                $receipt->generated_at = now();
+                $receipt->save();
+            }
+
             return redirect()
                 ->route('shops.sales.index', $shop)
                 ->with('success', __('Vente créée avec succès.'));
@@ -497,6 +433,12 @@ class SaleController extends Controller
         if ((int) $sale->shop_id !== (int) $shop->id) {
             abort(404);
         }
+
+        $user = $request->user();
+        $isSuper = $user?->hasRole('Super admin') ?? false;
+        $isAdmin = ($user?->hasRole('admin') ?? false) && ($user?->shops()->whereKey($shop->id)->exists() ?? false);
+        $isSeller = ($user?->hasRole('vendeur') ?? false) && ($user?->shops()->whereKey($shop->id)->exists() ?? false);
+        abort_unless($isSuper || $isAdmin || $isSeller, 403);
 
         $data = $request->validated();
 
@@ -667,9 +609,14 @@ class SaleController extends Controller
     /**
      * Suppression d’une vente + restauration des stocks
      */
-    public function destroy(Shop $shop, Sale $sale): RedirectResponse
+    public function destroy(Shop $shop, Sale $sale, Request $request): RedirectResponse
     {
         abort_if((int) $sale->shop_id !== (int) $shop->id, 404);
+
+        $user = $request->user();
+        $isSuper = $user?->hasRole('Super admin') ?? false;
+        $isAdmin = ($user?->hasRole('admin') ?? false) && ($user?->shops()->whereKey($shop->id)->exists() ?? false);
+        abort_unless($isSuper || $isAdmin, 403);
 
         return DB::transaction(function () use ($sale) {
             // 1. Restauration des stocks
