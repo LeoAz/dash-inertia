@@ -66,11 +66,11 @@ export default function SecondaryNav({ items, className }: SecondaryNavProps) {
     <nav
       aria-label="secondary navigation"
       className={cn(
-        'border-b px-26 md:px-28 bg-background/60 supports-[backdrop-filter]:backdrop-blur',
+        'border-b px-18 sm:px-20 md:px-24 lg:px-28 bg-background/60 supports-[backdrop-filter]:backdrop-blur',
         className,
       )}
     >
-      <div className="flex h-12 items-center gap-2 overflow-x-auto">
+      <div className="flex h-12 items-center gap-2 md:gap-3 lg:gap-4 overflow-x-auto overscroll-x-contain">
         {computedItems.map((item) => {
           const href = resolveUrl(item.href)
           const isActive = item.isActive ?? page.url.startsWith(href)
@@ -80,7 +80,7 @@ export default function SecondaryNav({ items, className }: SecondaryNavProps) {
               href={href}
               prefetch
               className={cn(
-                'relative rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2',
+                'relative rounded-md px-2.5 md:px-2.5 lg:px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2',
                 isActive && 'text-foreground',
               )}
             >

@@ -65,8 +65,8 @@ export default function AppHeaderLayout(
 
     return (
         <AppShell>
-            <header className="border-b px-26 md:px-28">
-                <div className="flex h-16 items-center justify-between gap-4">
+            <header className="border-b px-18 sm:px-20 md:px-24 lg:px-28">
+                <div className="flex h-16 items-center justify-between gap-3 md:gap-4">
                     {/* Left side */}
                     <div className="flex items-center gap-2">
                         <Breadcrumb>
@@ -77,7 +77,8 @@ export default function AppHeaderLayout(
                                     </BreadcrumbLink>
                                 </BreadcrumbItem>
                                 <BreadcrumbSeparator> / </BreadcrumbSeparator>
-                                <BreadcrumbItem className="md:hidden">
+                                {/* On mobile and tablet, show a compact dropdown. Show full crumb text on large screens. */}
+                                <BreadcrumbItem className="lg:hidden">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger className="hover:text-foreground">
                                             <BreadcrumbEllipsis />
@@ -90,13 +91,13 @@ export default function AppHeaderLayout(
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </BreadcrumbItem>
-                                <BreadcrumbItem className="max-md:hidden">
+                                <BreadcrumbItem className="hidden lg:inline-flex">
                                     <BreadcrumbLink href="#">Liste des boutiques</BreadcrumbLink>
-                                </BreadcrumbItem>
+                                    </BreadcrumbItem>
                                 <BreadcrumbSeparator> / </BreadcrumbSeparator>
                                 <BreadcrumbItem>
                                     <Select key={selectValue} value={selectValue} onValueChange={handleShopChange} disabled={shops.length === 0}>
-                                        <SelectTrigger aria-label="Selectionnez la boutique" className="h-8 px-1.5 text-foreground">
+                                        <SelectTrigger aria-label="Selectionnez la boutique" className="h-8 px-1.5 md:px-2 text-foreground">
                                             <SelectValue placeholder="Selectionnez la boutique" />
                                         </SelectTrigger>
                                         <SelectContent className="[&_*[role=option]]:ps-2 [&_*[role=option]]:pe-8 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:end-2">
@@ -135,7 +136,8 @@ function HeaderAdminLinks() {
         return null;
     }
     return (
-        <nav className="flex items-center gap-3 max-sm:hidden">
+        // Hide admin quick links on tablet and below to improve header responsiveness
+        <nav className="flex items-center gap-3 max-md:hidden">
             <Link href="/admin/users" className="text-sm text-muted-foreground hover:text-foreground">
                 Accès utilisateurs
             </Link>
