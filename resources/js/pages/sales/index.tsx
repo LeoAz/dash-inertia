@@ -20,6 +20,8 @@ export default function SalesIndex(props: SalesPageProps) {
   const [editOpen, setEditOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [detailsSale, setDetailsSale] = useState<SaleRow | null>(null)
+  // Sur tablette (<lg), on masque la liste par défaut et on affiche un bouton pour basculer
+  const [showSalesList, setShowSalesList] = useState(false)
   type SaleShowPayload = {
     id: number | string
     customer_name?: string
@@ -72,12 +74,18 @@ export default function SalesIndex(props: SalesPageProps) {
         title={
           <div className="flex items-center justify-between">
             <span>Créer une vente</span>
+            {/* Bouton tablette pour afficher/masquer la liste des ventes du jour */}
+            <Button type="button" className="lg:hidden" variant="outline" onClick={() => setShowSalesList(v => !v)}>
+              {showSalesList ? 'Créer une vente' : 'Voir ventes du jour'}
+            </Button>
           </div>
         }
         left={<SaleForm mode="create" {...props} />}
         sales={rows}
         onEditSale={handleEdit}
         onViewSale={(row) => { setDetailsSale(row); setDetailsOpen(true); }}
+        showSalesOnTablet={showSalesList}
+        onToggleSalesOnTablet={() => setShowSalesList(v => !v)}
       >
         <Head title="Ventes" />
       </SaleLayout>

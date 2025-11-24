@@ -67,6 +67,7 @@ export default function UsersIndex({ users, filters, meta }: UsersPageProps) {
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="h-9 py-2">Nom</TableHead>
+                <TableHead className="h-9 py-2">Username</TableHead>
                 <TableHead className="h-9 py-2">Email</TableHead>
                 <TableHead className="h-9 py-2">Rôle</TableHead>
                 <TableHead className="h-9 py-2">Boutiques</TableHead>
@@ -80,6 +81,7 @@ export default function UsersIndex({ users, filters, meta }: UsersPageProps) {
                 return (
                   <TableRow key={u.id}>
                     <TableCell className="py-2 font-medium">{u.name}</TableCell>
+                    <TableCell className="py-2">{u.username ?? '—'}</TableCell>
                     <TableCell className="py-2">
                       <Link href={`mailto:${u.email}`} className="text-primary hover:underline">{u.email}</Link>
                     </TableCell>
@@ -218,6 +220,7 @@ function UserFormModal({ mode, open, onOpenChange, roles, shops, user }: { mode:
           className="flex flex-col gap-4"
           defaults={isEdit ? {
             name: (user as AdminUser).name,
+            username: (user as AdminUser).username ?? '',
             email: (user as AdminUser).email,
             role: initialRole,
           } : undefined}
@@ -228,6 +231,11 @@ function UserFormModal({ mode, open, onOpenChange, roles, shops, user }: { mode:
                 <Label htmlFor={isEdit ? 'edit-name' : 'name'}>Nom</Label>
                 <Input id={isEdit ? 'edit-name' : 'name'} name="name" required autoFocus={!isEdit} defaultValue={isEdit ? (user as AdminUser).name : undefined} />
                 <InputError message={errors.name} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor={isEdit ? 'edit-username' : 'username'}>Nom d'utilisateur (optionnel)</Label>
+                <Input id={isEdit ? 'edit-username' : 'username'} name="username" defaultValue={isEdit ? (user as AdminUser).username ?? '' : undefined} />
+                <InputError message={errors.username} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor={isEdit ? 'edit-email' : 'email'}>Email</Label>

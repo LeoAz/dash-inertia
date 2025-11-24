@@ -10,6 +10,7 @@ export interface UserShopRef {
 export interface AdminUser {
   id: UserId;
   name: string;
+  username?: string | null;
   email: string;
   roles?: string[]; // role names from backend
   shops?: UserShopRef[];

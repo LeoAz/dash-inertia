@@ -21,6 +21,7 @@ class StoreUserRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
+            'username' => ['nullable', 'string', 'max:255', 'unique:users,username'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
             'role' => ['required', 'string', Rule::in($roleValues)],
@@ -43,6 +44,7 @@ class StoreUserRequest extends FormRequest
             'password.min' => 'Le mot de passe doit contenir au moins 6 caractères.',
             'password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
             'email.unique' => 'Cet email est déjà utilisé.',
+            'username.unique' => "Ce nom d'utilisateur est déjà utilisé.",
         ];
     }
 }

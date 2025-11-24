@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Laravel\Fortify\Contracts\LoginResponse;
 use Laravel\Fortify\Features;
@@ -32,6 +31,11 @@ class FortifyServiceProvider extends ServiceProvider
                 /** @var \App\Models\User $user */
                 $user = $request->user();
 
+                // Vendors without any shop: show dedicated page with modal + auto-logout
+                if ($user->hasRole('vendeur') && $user->shops()->count() === 0) {
+                    return redirect()->route('no-shop');
+                }
+
                 if ($user->hasRole('Super admin') || $user->hasRole('admin')) {
                     return redirect()->route('admin.shops.index');
                 }
@@ -42,14 +46,19 @@ class FortifyServiceProvider extends ServiceProvider
                         return redirect()->route('shops.sales.index', ['shop' => $firstShop->id]);
                     }
 
-                    // If somehow authenticated vendor without shop reaches here, send back to login
-                    return redirect()->route('login')->withErrors([
-                        Fortify::username() => __('Votre compte vendeur n\'est lié à aucune boutique. Veuillez contacter un administrateur.'),
-                    ]);
+                    // Fallback safety (should be caught above)
+                    return redirect()->route('no-shop');
                 }
 
-                // Fallback to Fortify home if no known role
-                return redirect(config('fortify.home'));
+                // Utilisateurs sans rôle explicite
+                // S'ils ont une boutique assignée, rediriger vers le dashboard de la première boutique
+                $firstShop = $user->shops()->orderBy('shops.id')->first();
+                if ($firstShop !== null) {
+                    return redirect()->route('shops.dashboard', ['shop' => $firstShop->id]);
+                }
+
+                // Sinon, rediriger vers la page dédiée "no-shop"
+                return redirect()->route('no-shop');
             }
         });
     }
@@ -78,13 +87,6 @@ class FortifyServiceProvider extends ServiceProvider
 
             if ($user === null || ! Hash::check($password, $user->password)) {
                 return null; // let Fortify handle invalid credentials message
-            }
-
-            // If the user is a vendor but has no shop, block login with a clear message
-            if ($user->hasRole('vendeur') && $user->shops()->count() === 0) {
-                throw ValidationException::withMessages([
-                    $usernameField => __('Votre compte vendeur n\'est lié à aucune boutique. Veuillez contacter un administrateur.'),
-                ]);
             }
 
             return $user;

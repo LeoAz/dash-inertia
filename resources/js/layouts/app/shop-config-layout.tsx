@@ -10,6 +10,8 @@ import type { PropsWithChildren, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import Breadcrumbs from '@/components/breadcrumbs';
 import { ToastProvider, ToastViewport, Toast, ToastTitle, ToastDescription, ToastClose } from '@/components/ui/toast';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 
 type MenuItem = {
     key: string;
@@ -101,8 +103,12 @@ export default function ShopConfigLayout({ children, breadcrumbs, title, shopId 
     return (
         <AppHeaderLayout contentFullWidth contentClassName="px-26 md:px-28 mt-5">
             <ToastHost />
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-[220px_1fr] md:gap-5">
-                <aside className="h-fit bg-background p-2 md:sticky md:top-4">
+            {/*
+             * Sur tablette (<lg), on masque le menu de gauche et on laisse le contenu occuper toute la largeur.
+             * Sur desktop (>=lg), on affiche un layout en 2 colonnes.
+             */}
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[220px_1fr] lg:gap-5">
+                <aside className="hidden h-fit rounded-md bg-background p-2 lg:sticky lg:top-4 lg:block">
                     <nav className="flex flex-col">
                         {items.map((item) => (
                             <NavItem key={item.key} active={isActive(item)} disabled={item.disabled} href={item.href}>
@@ -111,9 +117,18 @@ export default function ShopConfigLayout({ children, breadcrumbs, title, shopId 
                         ))}
                     </nav>
                 </aside>
-                <section className="min-h-[60vh] bg-background p-2 md:p-3">
+                <section className="min-h-[60vh] rounded-md bg-background p-2 md:p-3">
+                    {/* Bouton menu mobile pour afficher le menu masqué (<lg) */}
+                    <div className="mb-2 flex items-center justify-between lg:hidden">
+                        <div className="min-w-0">
+                            {breadcrumbs && breadcrumbs.length > 0 ? (
+                                <Breadcrumbs items={breadcrumbs} />
+                            ) : null}
+                        </div>
+                        <MobileMenu items={items} isActive={isActive} />
+                    </div>
                     {breadcrumbs && breadcrumbs.length > 0 && (
-                        <div className="mb-2 md:mb-3">
+                        <div className="mb-2 hidden md:mb-3 lg:block">
                             <Breadcrumbs items={breadcrumbs} />
                         </div>
                     )}
@@ -142,6 +157,31 @@ function NavItem({ href, children, active, disabled }: PropsWithChildren<{ href?
         <Link href={href} className={className} preserveScroll>
             {children}
         </Link>
+    );
+}
+
+function MobileMenu({ items, isActive }: { items: MenuItem[]; isActive: (item: MenuItem) => boolean }) {
+    const [open, setOpen] = useState(false);
+    return (
+        <>
+            <Button type="button" variant="outline" size="sm" className="lg:hidden" onClick={() => setOpen(true)} aria-label="Ouvrir le menu">
+                Menu
+            </Button>
+            <Sheet open={open} onOpenChange={setOpen}>
+                <SheetContent side="left" className="w-[86vw] sm:w-[380px] p-0">
+                    <SheetHeader className="border-b px-4 py-3">
+                        <SheetTitle>Menu</SheetTitle>
+                    </SheetHeader>
+                    <nav className="flex flex-col gap-1 p-2">
+                        {items.map((item) => (
+                            <NavItem key={item.key} active={isActive(item)} disabled={item.disabled} href={item.href}>
+                                {item.label}
+                            </NavItem>
+                        ))}
+                    </nav>
+                </SheetContent>
+            </Sheet>
+        </>
     );
 }
 

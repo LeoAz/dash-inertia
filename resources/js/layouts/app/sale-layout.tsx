@@ -33,7 +33,6 @@ import {
     ChevronFirstIcon,
     ChevronLastIcon,
     ListFilterIcon,
-    EyeIcon,
     EditIcon,
     TrashIcon, PrinterIcon
 } from 'lucide-react';
@@ -61,9 +60,12 @@ interface SaleLayoutProps {
     sales?: SaleRow[];
     onEditSale?: (sale: SaleRow) => void;
     onViewSale?: (sale: SaleRow) => void;
+    // Sur tablette (<lg), afficher la liste des ventes (true) ou le formulaire (false)
+    showSalesOnTablet?: boolean;
+    onToggleSalesOnTablet?: () => void;
 }
 
-export default function SaleLayout({ breadcrumbs, title, shopId, left, sales, onEditSale, onViewSale }: PropsWithChildren<SaleLayoutProps>) {
+export default function SaleLayout({ breadcrumbs, title, shopId, left, sales, onEditSale, onViewSale, showSalesOnTablet = false, onToggleSalesOnTablet }: PropsWithChildren<SaleLayoutProps>) {
     const page = usePage<{ shop?: { id: number | string } }>();
     const { props } = page;
 
@@ -87,9 +89,21 @@ export default function SaleLayout({ breadcrumbs, title, shopId, left, sales, on
 
     return (
         <AppHeaderLayout contentFullWidth contentClassName="px-26 md:px-28 mt-5">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-5">
+            {/*
+             * Responsive: sur <lg, on affiche soit le formulaire, soit la liste (plein écran) selon showSalesOnTablet.
+             * Sur >=lg, on revient à une grille 1/2 (form) + 2/3 (liste).
+             */}
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-3 lg:gap-5">
                 {/* Left: Sale form */}
-                <aside className="min-h-[60vh] bg-background p-2 md:p-3 md:col-span-1 md:max-h-[calc(100vh-140px)] overflow-y-auto rounded-md">
+                <aside
+                    className={cn(
+                        "min-h-[60vh] rounded-md bg-background p-2 md:p-3 overflow-y-auto",
+                        // Plein écran sur tablette quand la liste est masquée
+                        !showSalesOnTablet ? "block" : "hidden",
+                        // En desktop, toujours visible et sur 1 colonne
+                        "lg:col-span-1 lg:block lg:max-h-[calc(100vh-140px)]"
+                    )}
+                >
                     {breadcrumbs && breadcrumbs.length > 0 && (
                         <div className="mb-2 md:mb-3">
                             <Breadcrumbs items={breadcrumbs} />
@@ -102,10 +116,24 @@ export default function SaleLayout({ breadcrumbs, title, shopId, left, sales, on
                 </aside>
 
                 {/* Right: Today's sales listing */}
-                <section className="min-h-[60vh] bg-background p-2 md:p-3 md:col-span-2 md:max-h-[calc(100vh-140px)] overflow-y-auto rounded-md">
+                <section
+                    className={cn(
+                        "min-h-[60vh] rounded-md bg-background p-2 md:p-3 overflow-y-auto",
+                        // Plein écran sur tablette quand on affiche la liste
+                        showSalesOnTablet ? "block" : "hidden",
+                        // En desktop, toujours visible et prend 2 colonnes
+                        "lg:col-span-2 lg:block lg:max-h-[calc(100vh-140px)]"
+                    )}
+                >
                     <div className="mb-2 flex items-center justify-between gap-2 md:mb-3">
                         <h2 className="text-base font-semibold md:text-lg">Ventes du jour</h2>
-                        <SalesToolbar />
+                        <div className="flex items-center gap-2">
+                            {/* Bouton retour au formulaire sur tablette quand la liste est affichée */}
+                            <Button type="button" variant="outline" className="lg:hidden" onClick={onToggleSalesOnTablet}>
+                                Créer une vente
+                            </Button>
+                            <SalesToolbar />
+                        </div>
                     </div>
                     <SalesDataTable rows={sales ?? []} onEdit={onEditSale} onView={onViewSale} />
                 </section>

@@ -22,6 +22,13 @@ class UpdateUserRequest extends FormRequest
 
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'username' => [
+                'sometimes',
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('users', 'username')->ignore($userId),
+            ],
             'email' => [
                 'sometimes',
                 'required',
@@ -50,6 +57,7 @@ class UpdateUserRequest extends FormRequest
             'password.min' => 'Le mot de passe doit contenir au moins 6 caractères.',
             'password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
             'email.unique' => 'Cet email est déjà utilisé.',
+            'username.unique' => "Ce nom d'utilisateur est déjà utilisé.",
         ];
     }
 }

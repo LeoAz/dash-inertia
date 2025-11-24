@@ -24,6 +24,7 @@ class UserController extends Controller
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('username', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
             });
         }
@@ -54,6 +55,12 @@ class UserController extends Controller
         // Create user (password cast handles hashing)
         $user = new User;
         $user->name = $data['name'];
+        // Normalize optional username
+        $username = $data['username'] ?? null;
+        if ($username === '') {
+            $username = null;
+        }
+        $user->username = $username;
         $user->email = $data['email'];
         $user->password = $data['password'];
         $user->save();
@@ -79,6 +86,13 @@ class UserController extends Controller
         }
         if (array_key_exists('email', $data)) {
             $user->email = $data['email'];
+        }
+        if (array_key_exists('username', $data)) {
+            $username = $data['username'];
+            if ($username === '') {
+                $username = null;
+            }
+            $user->username = $username;
         }
         if (! empty($data['password'] ?? null)) {
             $user->password = $data['password'];

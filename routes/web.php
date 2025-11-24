@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HairdresserController;
+use App\Http\Controllers\HomeRedirectController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\ReportController;
@@ -12,14 +13,14 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return to_route('dashboard');
-})->name('home');
+// Redirection d'accueil sans logique dans ce fichier: déléguée au contrôleur invocable
+Route::get('/', HomeRedirectController::class)->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    // Page affichée aux utilisateurs sans boutique associée
+    Route::get('no-shop', function () {
+        return Inertia::render('auth/no-shop');
+    })->name('no-shop');
 
     Route::prefix('shops/{shop}')
         ->as('shops.')

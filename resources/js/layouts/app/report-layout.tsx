@@ -3,9 +3,11 @@ import { cn } from '@/lib/utils'
 import { setUrlDefaults } from '@/wayfinder'
 import { Link, usePage } from '@inertiajs/react'
 import type { PropsWithChildren, ReactNode } from 'react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Breadcrumbs from '@/components/breadcrumbs'
 import reportsRoutes from '@/routes/shops/reports'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Button } from '@/components/ui/button'
 
 interface ReportLayoutProps {
   breadcrumbs?: Array<{ title: string; href?: string }>
@@ -22,7 +24,7 @@ export default function ReportLayout({ children, breadcrumbs, title, shopId, men
     if (shopId !== undefined && shopId !== null) {
       return shopId
     }
-    const pageShop = (props as any)?.shop
+    const pageShop = props?.shop
     if (pageShop && pageShop.id) {
       return pageShop.id
     }
@@ -62,8 +64,9 @@ export default function ReportLayout({ children, breadcrumbs, title, shopId, men
 
   return (
     <AppHeaderLayout contentFullWidth contentClassName="px-26 md:px-28 mt-5">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-[220px_1fr] md:gap-5">
-        <aside className="h-fit bg-background p-2 md:sticky md:top-4 rounded-md">
+      {/* Sur tablette (<lg), masquer le menu gauche. Sur desktop (>=lg), 2 colonnes. */}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[220px_1fr] lg:gap-5">
+        <aside className="hidden h-fit rounded-md bg-background p-2 lg:sticky lg:top-4 lg:block">
           <nav className="flex flex-col">
             {items.map((item) => (
               <NavItem key={item.key} active={isActive(item.href)} disabled={item.disabled} href={item.href}>
@@ -72,9 +75,18 @@ export default function ReportLayout({ children, breadcrumbs, title, shopId, men
             ))}
           </nav>
         </aside>
-        <section className="min-h-[60vh] bg-background p-2 md:p-3 rounded-md">
+        <section className="min-h-[60vh] rounded-md bg-background p-2 md:p-3">
+          {/* Bouton menu mobile pour afficher le menu masqué (<lg) */}
+          <div className="mb-2 flex items-center justify-between lg:hidden">
+            <div className="min-w-0">
+              {breadcrumbs && breadcrumbs.length > 0 ? (
+                <Breadcrumbs items={breadcrumbs} />
+              ) : null}
+            </div>
+            <MobileMenu items={items} isActiveHref={isActive} />
+          </div>
           {breadcrumbs && breadcrumbs.length > 0 && (
-            <div className="mb-2 md:mb-3">
+            <div className="mb-2 hidden md:mb-3 lg:block">
               <Breadcrumbs items={breadcrumbs} />
             </div>
           )}
@@ -101,5 +113,30 @@ function NavItem({ href, children, active, disabled }: PropsWithChildren<{ href?
     <Link href={href} className={className} preserveScroll>
       {children}
     </Link>
+  )
+}
+
+function MobileMenu({ items, isActiveHref }: { items: Array<{ key: string; label: string; href?: string; disabled?: boolean }>; isActiveHref: (href?: string) => boolean }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button type="button" variant="outline" size="sm" className="lg:hidden" onClick={() => setOpen(true)} aria-label="Ouvrir le menu">
+        Menu
+      </Button>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="left" className="w-[86vw] sm:w-[380px] p-0">
+          <SheetHeader className="border-b px-4 py-3">
+            <SheetTitle>Menu</SheetTitle>
+          </SheetHeader>
+          <nav className="flex flex-col gap-1 p-2">
+            {items.map((item) => (
+              <NavItem key={item.key} active={isActiveHref(item.href)} disabled={item.disabled} href={item.href}>
+                {item.label}
+              </NavItem>
+            ))}
+          </nav>
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }

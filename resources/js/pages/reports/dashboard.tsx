@@ -130,9 +130,9 @@ export default function ShopDashboard({ shop, filters, revenue_by_day, by_produc
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
         {/* CA total (line) */}
-        <Card className="col-span-1 md:col-span-2 xl:col-span-2">
+        <Card className="col-span-1 xl:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Chiffre d\'affaires — évolution</CardTitle>
           </CardHeader>
