@@ -38,7 +38,7 @@ export default function UsersIndex({ users, filters, meta }: UsersPageProps) {
 
   return (
     <AdminLayout
-      title="Gestion des utilisateurs"
+      title=""
       breadcrumbs={[{ title: 'Admin', href: '/admin' }, { title: 'Utilisateurs' }]}
       menu={[
         { key: 'users', label: 'Gestion des utilisateurs', href: '/admin/users' },

@@ -45,7 +45,7 @@ export default function ShopIndex({ shops, filters }: ShopPageProps) {
 
   return (
     <AdminLayout
-      title="Gestion des boutiques"
+      title=""
       breadcrumbs={[{ title: 'Admin', href: '/admin' }, { title: 'Boutiques' }]}
       menu={[
         { key: 'users', label: 'Gestion des utilisateurs', href: '/admin/users' },
