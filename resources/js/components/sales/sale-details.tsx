@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type { SaleRow } from '@/types/sale'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
@@ -24,9 +24,11 @@ interface SaleDetailsProps {
         phone?: string | null
         address?: string | null
     }
+    // Quand true, déclenche automatiquement l'impression à l'ouverture
+    autoPrint?: boolean
 }
 
-export default function SaleDetails({ open, onOpenChange, sale, shop }: SaleDetailsProps) {
+export default function SaleDetails({ open, onOpenChange, sale, shop, autoPrint }: SaleDetailsProps) {
     const totalAmount = useMemo(() => Number(sale?.total_amount ?? 0), [sale?.total_amount])
     const receiptNumber = sale?.receipt_number ?? `SALE-${sale?.id ?? ''}`
 
@@ -84,13 +86,52 @@ export default function SaleDetails({ open, onOpenChange, sale, shop }: SaleDeta
             iframeDoc.close()
         }
 
-        // Nettoyer après impression
-        setTimeout(() => {
-            if (iframe.parentNode) {
-                iframe.parentNode.removeChild(iframe)
+        // Déclencher l'impression quand le contenu est prêt
+        const tryPrint = () => {
+            try {
+                iframe.contentWindow?.focus()
+                iframe.contentWindow?.print()
+            } catch (e) {
+                // journaliser l'erreur pour diagnostic sans interrompre le flux
+                // eslint-disable-next-line no-console
+                console.error(e)
+            } finally {
+                // Nettoyer après un court délai
+                setTimeout(() => {
+                    if (iframe.parentNode) {
+                        iframe.parentNode.removeChild(iframe)
+                    }
+                }, 1500)
             }
-        }, 3000)
+        }
+
+        // Certains navigateurs nécessitent d'attendre l'événement onload
+        if (iframe.contentWindow?.document?.readyState === 'complete') {
+            tryPrint()
+        } else {
+            iframe.onload = tryPrint
+            // Sécurité: force une tentative au cas où onload ne se déclenche pas
+            setTimeout(tryPrint, 600)
+        }
     }
+
+    // Impression auto à l'ouverture (une seule fois par vente)
+    const lastPrintedIdRef = useRef<number | string | null>(null)
+
+    useEffect(() => {
+        if (!autoPrint || !open || !sale) {
+            return
+        }
+        if (lastPrintedIdRef.current === sale.id) {
+            return
+        }
+        // Retarder légèrement pour laisser le DOM se stabiliser
+        const t = setTimeout(() => {
+            printTicket()
+        }, 120)
+        lastPrintedIdRef.current = sale.id ?? null
+        return () => clearTimeout(t)
+    }, [autoPrint, open, sale?.id])
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -216,100 +257,123 @@ function generatePrintContent({ sale, shop, qrSvgString, promotionAmount }: {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ticket ${sale.receipt_number ?? sale.id}</title>
   <style>
-    @page { size: 80mm auto; margin: 5mm; }
+    /* Mise en page optimisée pour imprimante thermique (80mm) */
+    /* Largeur fixe 80mm; la hauteur reste automatique par défaut */
+    @page { size: 80mm; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: auto; }
     body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
       font-family: 'Courier New', monospace;
-      font-size: 12px;
-      line-height: 1.4;
+      font-size: 10px;
+      line-height: 1.35;
       color: #000;
       background: #fff;
-      padding: 10px;
-      width: 80mm;
+      /* Utiliser une largeur utile qui tient compte du padding pour éviter tout dépassement */
+      width: 76mm; /* 80mm - (2mm * 2) */
+      margin: 0 auto;
+      padding: 2mm;
     }
-    .ticket { width: 100%; }
+    .ticket {
+      width: 100%;
+      /* Empêcher la coupure du ticket sur plusieurs pages */
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
     .header {
       text-align: center;
-      margin-bottom: 15px;
+      margin-bottom: 8px;
       border-bottom: 2px dashed #000;
-      padding-bottom: 10px;
+      padding-bottom: 6px;
     }
     .logo {
       max-width: 100%;
-      max-height: 40px;
+      max-height: 32px;
       margin: 0 auto 8px;
       display: block;
     }
     .shop-name {
-      font-size: 16px;
+      font-size: 13px;
       font-weight: bold;
       margin-bottom: 4px;
     }
     .receipt-number {
-      font-size: 24px;
-      font-weight: 800;
+      font-size: 14px;
+      font-weight: 700;
       letter-spacing: 1px;
       margin: 6px 0 2px;
     }
-    .info { font-size: 10px; margin-bottom: 2px; }
+    .info { font-size: 9px; margin-bottom: 2px; }
     .section {
-      margin: 12px 0;
+      margin: 8px 0;
       border-top: 1px dashed #000;
-      padding-top: 8px;
+      padding-top: 6px;
+      /* Eviter les sauts à l'intérieur de sections */
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
     .section-title {
       font-weight: bold;
-      font-size: 13px;
-      margin-bottom: 8px;
+      font-size: 11px;
+      margin-bottom: 5px;
       text-transform: uppercase;
     }
     .item {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     .item-name { flex: 1; text-align: left; }
     .item-details {
-      font-size: 10px;
+      font-size: 9px;
       color: #666;
       margin-left: 10px;
     }
     .item-price {
       text-align: right;
       min-width: 60px;
+      font-variant-numeric: tabular-nums;
     }
     .subtotal {
       border-top: 1px dashed #000;
-      margin-top: 8px;
-      padding-top: 8px;
+      margin-top: 5px;
+      padding-top: 5px;
       font-weight: bold;
     }
     .total {
       border-top: 2px solid #000;
-      margin-top: 12px;
-      padding-top: 12px;
-      font-size: 14px;
+      margin-top: 8px;
+      padding-top: 8px;
+      font-size: 12px;
       font-weight: bold;
     }
     .promotion { color: #e53e3e; font-style: italic; }
     .promotion-amount { color: #28a745; font-weight: bold; }
     .qr-code {
       text-align: center;
-      margin-top: 20px;
-      padding-top: 15px;
+      margin-top: 10px;
+      padding-top: 8px;
       border-top: 2px dashed #000;
     }
+    .qr-code svg { width: 120px; max-width: 100%; height: auto; }
     .footer {
       text-align: center;
-      margin-top: 15px;
-      font-size: 10px;
+      margin-top: 10px;
+      font-size: 9px;
       color: #666;
     }
     .thank-you {
-      font-size: 12px;
+      font-size: 10px;
       font-weight: bold;
-      margin-top: 10px;
+      margin-top: 8px;
       text-align: center;
+    }
+
+    @media print {
+      /* Renforcer l'absence de coupure */
+      .ticket, .section, .total, .footer { break-inside: avoid; page-break-inside: avoid; }
+      html, body { height: auto !important; overflow: visible !important; }
     }
   </style>
 </head>
@@ -394,15 +458,6 @@ function generatePrintContent({ sale, shop, qrSvgString, promotionAmount }: {
       <div>À bientôt</div>
     </div>
   </div>
-
-  <script>
-    window.onload = () => {
-      setTimeout(() => {
-        window.print();
-        setTimeout(() => window.close(), 500);
-      }, 250);
-    };
-  </script>
 </body>
 </html>`
 }

@@ -21,18 +21,28 @@ class HomeRedirectController extends Controller
             return redirect()->route('login');
         }
 
-        // Admins: redirect to admin area
+        // Super admin: aller au Home-menu
         if ($user->hasRole('Super admin')) {
-            return redirect()->route('admin.users.index');
+            return redirect()->route('home.menu');
         }
 
+        // Admin: aller également au Home-menu
         if ($user->hasRole('admin')) {
-            // Note: admin.users.index is restricted to Super admin in routes.
-            // Send basic admins to shops listing to avoid 403.
-            return redirect()->route('admin.shops.index');
+            return redirect()->route('home.menu');
         }
 
-        // Vendors: redirect to their first (by id) associated shop dashboard
+        // Vendeur: aller au Shop-menu (menus orientés boutique), shop-scoped
+        if ($user->hasRole('vendeur')) {
+            $firstShop = $user->shops()->orderBy('shops.id')->first();
+            if ($firstShop !== null) {
+                return redirect()->route('shops.shop-menu', ['shop' => $firstShop->id]);
+            }
+
+            // Pas de boutique associée
+            return redirect()->route('no-shop');
+        }
+
+        // Autres rôles: rediriger vers la première boutique (comportement existant)
         $firstShop = $user->shops()->orderBy('shops.id')->first();
         if ($firstShop !== null) {
             return redirect()->route('shops.dashboard', ['shop' => $firstShop->id]);

@@ -63,7 +63,7 @@ export default function AllSalesPage() {
           <div className="flex-1">
             <label className="mb-1 block text-sm text-muted-foreground">Recherche</label>
             <Input
-              placeholder="Reçu, client, coiffeur..."
+              placeholder="Reçu, client, coiffeur, produit, service…"
               value={local.q as string}
               onChange={(e) => setLocal((s) => ({ ...s, q: e.target.value }))}
             />
@@ -126,13 +126,15 @@ export default function AllSalesPage() {
                 <TableHead className="h-9 py-2">N° reçu</TableHead>
                 <TableHead className="h-9 py-2">Client</TableHead>
                 <TableHead className="h-9 py-2">Coiffeur</TableHead>
+                <TableHead className="h-9 py-2">Produits</TableHead>
+                <TableHead className="h-9 py-2">Services</TableHead>
                 <TableHead className="h-9 py-2 text-right">Montant</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-2 text-center text-muted-foreground">Aucune vente trouvée</TableCell>
+                  <TableCell colSpan={7} className="py-2 text-center text-muted-foreground">Aucune vente trouvée</TableCell>
                 </TableRow>
               )}
               {rows.map((r) => (
@@ -141,6 +143,34 @@ export default function AllSalesPage() {
                   <TableCell className="py-2">{r.receipt_number ?? '—'}</TableCell>
                   <TableCell className="py-2">{r.customer_name ?? '—'}</TableCell>
                   <TableCell className="py-2">{r.hairdresser_name ?? '—'}</TableCell>
+                  <TableCell className="py-2">
+                    {(() => {
+                      const products = (r.details ?? []).filter((d) => d.type === 'product')
+                      if (products.length === 0) return <span className="text-muted-foreground">—</span>
+                      return (
+                        <div className="flex flex-wrap gap-1 text-sm">
+                          {products.map((p, i) => (
+                            <span key={`p-${i}`} className="rounded bg-muted px-1 py-0.5">
+                              {p.name}{typeof p.quantity === 'number' ? ` × ${p.quantity}` : ''}
+                            </span>
+                          ))}
+                        </div>
+                      )
+                    })()}
+                  </TableCell>
+                  <TableCell className="py-2">
+                    {(() => {
+                      const services = (r.details ?? []).filter((d) => d.type === 'service')
+                      if (services.length === 0) return <span className="text-muted-foreground">—</span>
+                      return (
+                        <div className="flex flex-wrap gap-1 text-sm">
+                          {services.map((s, i) => (
+                            <span key={`s-${i}`} className="rounded bg-muted px-1 py-0.5">{s.name}</span>
+                          ))}
+                        </div>
+                      )
+                    })()}
+                  </TableCell>
                   <TableCell className="py-2 text-right">{Number(r.total_amount).toLocaleString()} XOF</TableCell>
                 </TableRow>
               ))}

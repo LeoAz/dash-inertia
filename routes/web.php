@@ -17,6 +17,10 @@ use Inertia\Inertia;
 Route::get('/', HomeRedirectController::class)->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Menus d'accueil
+    Route::get('/home-menu', fn () => Inertia::render('home-menu'))
+        ->name('home.menu');
+
     // Page affichée aux utilisateurs sans boutique associée
     Route::get('no-shop', function () {
         return Inertia::render('auth/no-shop');
@@ -25,6 +29,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('shops/{shop}')
         ->as('shops.')
         ->group(function () {
+            // Shop scoped shop-menu
+            Route::get('shop-menu', fn ($shop) => Inertia::render('shop-menu'))
+                ->name('shop-menu');
             Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
             Route::resource('products', ProductController::class);
@@ -33,6 +40,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::resource('promotions', PromotionController::class);
             // Sales routes
             Route::get('sales/history', [SaleController::class, 'history'])->name('sales.history');
+            // Client suggestions for autocomplete (name & phone)
+            Route::get('sales/client-suggestions', [SaleController::class, 'clientSuggestions'])
+                ->name('sales.client-suggestions');
             Route::resource('sales', SaleController::class)->only(['index', 'store', 'update', 'show', 'destroy']);
 
             // Reports routes

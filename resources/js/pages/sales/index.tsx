@@ -8,11 +8,14 @@ import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import SaleForm from '@/components/sales/sale-form'
 import { Calendar } from '@/components/ui/calendar'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import salesRoutes from '@/routes/shops/sales/index'
 import { fr } from 'date-fns/locale'
 import { toast } from 'sonner'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function SalesIndex(props: SalesPageProps) {
   const { sales, shop } = props
@@ -20,6 +23,7 @@ export default function SalesIndex(props: SalesPageProps) {
   const [editOpen, setEditOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [detailsSale, setDetailsSale] = useState<SaleRow | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
   // Sur tablette (<lg), on masque la liste par défaut et on affiche un bouton pour basculer
   const [showSalesList, setShowSalesList] = useState(false)
   type SaleShowPayload = {
@@ -66,21 +70,31 @@ export default function SalesIndex(props: SalesPageProps) {
     }
   }
 
+  // Statistiques du jour (sur la liste déjà filtrée "du jour")
+  const stats = useMemo(() => {
+    const totalVendu = rows.reduce((s, r) => s + Number(r.total_amount ?? 0), 0)
+    let totalProduits = 0
+    let totalServices = 0
+    for (const r of rows) {
+      for (const d of r.details ?? []) {
+        if (d.type === 'product') {
+          totalProduits += Number(d.line_subtotal ?? (Number(d.unit_price ?? d.price ?? 0) * Number(d.quantity ?? 1)))
+        } else if (d.type === 'service') {
+          totalServices += Number(d.price ?? d.line_subtotal ?? 0)
+        }
+      }
+    }
+    return { totalVendu, totalProduits, totalServices }
+  }, [rows])
+
+  const fmt = (v: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 }).format(v)
+
   return (
     <>
       <SaleLayout
         shopId={shop?.id}
         breadcrumbs={[{ title: 'Ventes', href: '#' }]}
-        title={
-          <div className="flex items-center justify-between">
-            <span>Créer une vente</span>
-            {/* Bouton tablette pour afficher/masquer la liste des ventes du jour */}
-            <Button type="button" className="lg:hidden" variant="outline" onClick={() => setShowSalesList(v => !v)}>
-              {showSalesList ? 'Créer une vente' : 'Voir ventes du jour'}
-            </Button>
-          </div>
-        }
-        left={<SaleForm mode="create" {...props} />}
+        title={undefined}
         sales={rows}
         onEditSale={handleEdit}
         onViewSale={(row) => { setDetailsSale(row); setDetailsOpen(true); }}
@@ -88,7 +102,53 @@ export default function SalesIndex(props: SalesPageProps) {
         onToggleSalesOnTablet={() => setShowSalesList(v => !v)}
       >
         <Head title="Ventes" />
+        {/* Barre d’actions en haut de la page */}
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Button type="button" onClick={() => setCreateOpen(true)}>Nouvelle vente</Button>
+          </div>
+          {/* Bouton alternance sur tablette si nécessaire */}
+          <Button type="button" className="lg:hidden" variant="outline" onClick={() => setShowSalesList(v => !v)}>
+            {showSalesList ? 'Créer une vente' : 'Voir ventes du jour'}
+          </Button>
+        </div>
+
+        {/* Stats cards */}
+        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Card>
+            <CardHeader className="py-3"><CardTitle className="text-sm">Montant total vendu</CardTitle></CardHeader>
+            <CardContent className="pb-3 text-xl font-semibold">{fmt(stats.totalVendu)}</CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="py-3"><CardTitle className="text-sm">Montant total produits</CardTitle></CardHeader>
+            <CardContent className="pb-3 text-xl font-semibold">{fmt(stats.totalProduits)}</CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="py-3"><CardTitle className="text-sm">Montant total services</CardTitle></CardHeader>
+            <CardContent className="pb-3 text-xl font-semibold">{fmt(stats.totalServices)}</CardContent>
+          </Card>
+        </div>
       </SaleLayout>
+
+      {/* Sheet de création de vente */}
+      <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+        <SheetContent className="sm:max-w-3xl w-[96vw] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Créer une vente</SheetTitle>
+          </SheetHeader>
+          <div className="py-4 px-4">
+            <SaleForm
+              mode="create"
+              {...props}
+              onSuccess={(fresh) => {
+                setCreateOpen(false)
+                setDetailsSale(fresh)
+                setDetailsOpen(true)
+              }}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
@@ -111,7 +171,7 @@ export default function SalesIndex(props: SalesPageProps) {
         </DialogContent>
       </Dialog>
 
-      <SaleDetails open={detailsOpen} onOpenChange={setDetailsOpen} sale={detailsSale} shop={shop} />
+      <SaleDetails open={detailsOpen} onOpenChange={setDetailsOpen} sale={detailsSale} shop={shop} autoPrint={true} />
     </>
   )
 }
@@ -138,7 +198,7 @@ type SaleFormProps = SalesPageProps & {
   onDone?: () => void
 }
 
-function SaleForm({ mode, initial, onDone, products: productOptions, services: serviceOptions, promotions: promoOptions, hairdressers, shop }: SaleFormProps) {
+function SaleFormLegacy({ mode, initial, onDone, products: productOptions, services: serviceOptions, promotions: promoOptions, hairdressers, shop }: SaleFormProps) {
   const page = usePage()
   const errors = (page.props as unknown as { errors?: Record<string, string> })?.errors ?? {}
 
@@ -156,6 +216,8 @@ function SaleForm({ mode, initial, onDone, products: productOptions, services: s
 
   const [addPromotion, setAddPromotion] = useState<boolean>(Boolean(initial?.promotion_id))
   const [selectedPromotionId, setSelectedPromotionId] = useState<string>(initial?.promotion_id ? String(initial?.promotion_id) : '')
+
+  // Autocomplete supprimé pour Nom et Téléphone (inputs simples)
 
   // Si les données initiales changent (ouverture du modal), ré-initialiser le state
   useEffect(() => {
@@ -318,11 +380,24 @@ function SaleForm({ mode, initial, onDone, products: productOptions, services: s
         </div>
         <div className="grid gap-3 p-3 md:grid-cols-2">
           <div>
-            <Input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Nom du client" aria-label="Nom du client" />
+            <Input
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              placeholder="Nom du client"
+              aria-label="Nom du client"
+              autoComplete="off"
+            />
             {errors.customer_name && <div className="mt-1 text-xs text-destructive">{String(errors.customer_name)}</div>}
           </div>
           <div>
-            <Input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="Téléphone" aria-label="Téléphone" />
+            <Input
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value)}
+              placeholder="Téléphone"
+              aria-label="Téléphone"
+              autoComplete="off"
+              inputMode="tel"
+            />
             {errors.customer_phone && <div className="mt-1 text-xs text-destructive">{String(errors.customer_phone)}</div>}
           </div>
           <div>
@@ -349,22 +424,73 @@ function SaleForm({ mode, initial, onDone, products: productOptions, services: s
             </Popover>
             {errors.sale_date && <div className="mt-1 text-xs text-destructive">{String(errors.sale_date)}</div>}
           </div>
-          <div>
-            <Select value={hairdresserId} onValueChange={setHairdresserId}>
-              <SelectTrigger aria-label="Coiffeur">
-                <SelectValue placeholder="Sélectionner un coiffeur" />
-              </SelectTrigger>
-              <SelectContent>
-                {hairdressers.map((h) => (
-                  <SelectItem key={h.id} value={String(h.id)}>{h.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.hairdresser_id && <div className="mt-1 text-xs text-destructive">{String(errors.hairdresser_id)}</div>}
+          {/* Le choix du coiffeur est déplacé dans une section dédiée sous Produits */}
+        </div>
+      </div>
+
+      {/* Services avant Produits */}
+      <div className="rounded-md border">
+        <div className="border-b px-3 py-2">
+          <h3 className="text-sm font-medium">Services</h3>
+        </div>
+        <div className="space-y-3 p-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="min-w-[220px] grow">
+              <Select value={selectedServiceId} onValueChange={(v) => setSelectedServiceId(v)}>
+                <SelectTrigger aria-label="Service">
+                  <SelectValue placeholder="Sélectionner un service" />
+                </SelectTrigger>
+                <SelectContent>
+                  {serviceOptions.map((s) => (
+                    <SelectItem key={s.id} value={String(s.id)}>{s.name} — {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(s.price)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors['services.0.service_id'] && <div className="mt-1 text-xs text-destructive">{String(errors['services.0.service_id'])}</div>}
+            </div>
+            <Button type="button" onClick={addService} className="shrink-0">Ajouter</Button>
+          </div>
+
+          <div className="overflow-hidden rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="h-9 py-2">Service</TableHead>
+                  <TableHead className="h-9 w-[120px] py-2 text-right">Prix</TableHead>
+                  <TableHead className="h-9 w-[80px] py-2"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {serviceLines.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="py-3 text-center text-sm text-muted-foreground">Aucun service ajouté</TableCell>
+                  </TableRow>
+                )}
+                {serviceLines.map((line, idx) => {
+                  const s = findService(line.service_id)
+                  const unit = s?.price ?? 0
+                  return (
+                    <TableRow key={`srv-${idx}`}>
+                      <TableCell className="py-2">{s?.name}</TableCell>
+                      <TableCell className="py-2 text-right">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(unit)}</TableCell>
+                      <TableCell className="py-2 text-right">
+                        <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={() => removeService(idx)}>Retirer</Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 text-sm">
+            <div className="text-muted-foreground">Total services:</div>
+            <div className="font-medium">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(servicesSubtotal)}</div>
           </div>
         </div>
       </div>
 
+      {/* Produits ensuite */}
       <div className="rounded-md border">
         <div className="border-b px-3 py-2">
           <h3 className="text-sm font-medium">Produits</h3>
@@ -432,64 +558,24 @@ function SaleForm({ mode, initial, onDone, products: productOptions, services: s
         </div>
       </div>
 
+
+      {/* Section dédiée Coiffeur sous Produits */}
       <div className="rounded-md border">
         <div className="border-b px-3 py-2">
-          <h3 className="text-sm font-medium">Services</h3>
+          <h3 className="text-sm font-medium">Coiffeur</h3>
         </div>
-        <div className="space-y-3 p-3">
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="min-w-[220px] grow">
-              <Select value={selectedServiceId} onValueChange={(v) => setSelectedServiceId(v)}>
-                <SelectTrigger aria-label="Service">
-                  <SelectValue placeholder="Sélectionner un service" />
-                </SelectTrigger>
-                <SelectContent>
-                  {serviceOptions.map((s) => (
-                    <SelectItem key={s.id} value={String(s.id)}>{s.name} — {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(s.price)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors['services.0.service_id'] && <div className="mt-1 text-xs text-destructive">{String(errors['services.0.service_id'])}</div>}
-            </div>
-            <Button type="button" onClick={addService} className="shrink-0">Ajouter</Button>
-          </div>
-
-          <div className="overflow-hidden rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="h-9 py-2">Service</TableHead>
-                  <TableHead className="h-9 w-[120px] py-2 text-right">Prix</TableHead>
-                  <TableHead className="h-9 w-[80px] py-2"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {serviceLines.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={3} className="py-3 text-center text-sm text-muted-foreground">Aucun service ajouté</TableCell>
-                  </TableRow>
-                )}
-                {serviceLines.map((line, idx) => {
-                  const s = findService(line.service_id)
-                  const unit = s?.price ?? 0
-                  return (
-                    <TableRow key={`srv-${idx}`}>
-                      <TableCell className="py-2">{s?.name}</TableCell>
-                      <TableCell className="py-2 text-right">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(unit)}</TableCell>
-                      <TableCell className="py-2 text-right">
-                        <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={() => removeService(idx)}>Retirer</Button>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </div>
-
-          <div className="flex items-center justify-end gap-3 text-sm">
-            <div className="text-muted-foreground">Total services:</div>
-            <div className="font-medium">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(servicesSubtotal)}</div>
-          </div>
+        <div className="p-3 md:max-w-sm">
+          <Select value={hairdresserId} onValueChange={setHairdresserId}>
+            <SelectTrigger aria-label="Coiffeur">
+              <SelectValue placeholder="Sélectionner un coiffeur" />
+            </SelectTrigger>
+            <SelectContent>
+              {hairdressers.map((h) => (
+                <SelectItem key={h.id} value={String(h.id)}>{h.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.hairdresser_id && <div className="mt-1 text-xs text-destructive">{String(errors.hairdresser_id)}</div>}
         </div>
       </div>
 

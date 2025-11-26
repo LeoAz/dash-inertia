@@ -65,7 +65,7 @@ interface SaleLayoutProps {
     onToggleSalesOnTablet?: () => void;
 }
 
-export default function SaleLayout({ breadcrumbs, title, shopId, left, sales, onEditSale, onViewSale, showSalesOnTablet = false, onToggleSalesOnTablet }: PropsWithChildren<SaleLayoutProps>) {
+export default function SaleLayout({ breadcrumbs, title, shopId, left, sales, onEditSale, onViewSale, showSalesOnTablet = false, onToggleSalesOnTablet, children }: PropsWithChildren<SaleLayoutProps>) {
     const page = usePage<{ shop?: { id: number | string } }>();
     const { props } = page;
 
@@ -87,54 +87,56 @@ export default function SaleLayout({ breadcrumbs, title, shopId, left, sales, on
         }
     }, [effectiveShopId]);
 
+    const hasLeft = Boolean(left);
+
     return (
         <AppHeaderLayout contentFullWidth contentClassName="px-26 md:px-28 mt-5">
             {/*
              * Responsive: sur <lg, on affiche soit le formulaire, soit la liste (plein écran) selon showSalesOnTablet.
              * Sur >=lg, on revient à une grille 1/2 (form) + 2/3 (liste).
              */}
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-3 lg:gap-5">
-                {/* Left: Sale form */}
-                <aside
-                    className={cn(
-                        "min-h-[60vh] rounded-md bg-background p-2 md:p-3 overflow-y-auto",
-                        // Plein écran sur tablette quand la liste est masquée
-                        !showSalesOnTablet ? "block" : "hidden",
-                        // En desktop, toujours visible et sur 1 colonne
-                        "lg:col-span-1 lg:block lg:max-h-[calc(100vh-140px)]"
-                    )}
-                >
-                    {breadcrumbs && breadcrumbs.length > 0 && (
-                        <div className="mb-2 md:mb-3">
-                            <Breadcrumbs items={breadcrumbs} />
-                        </div>
-                    )}
-                    {title && <h1 className="mb-2 text-base font-semibold md:mb-3 md:text-xl">{title}</h1>}
-                    <div className="">
-                        {left}
-                    </div>
-                </aside>
+            <div className={cn("grid gap-3 lg:gap-5", hasLeft ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1")}>
+                {hasLeft && (
+                    <aside
+                        className={cn(
+                            "min-h-[60vh] rounded-md bg-background p-2 md:p-3 overflow-y-auto",
+                            !showSalesOnTablet ? "block" : "hidden",
+                            "lg:col-span-1 lg:block lg:max-h-[calc(100vh-140px)]"
+                        )}
+                    >
+                        {breadcrumbs && breadcrumbs.length > 0 && (
+                            <div className="mb-2 md:mb-3">
+                                <Breadcrumbs items={breadcrumbs} />
+                            </div>
+                        )}
+                        {title && <h1 className="mb-2 text-base font-semibold md:mb-3 md:text-xl">{title}</h1>}
+                        <div>{left}</div>
+                    </aside>
+                )}
 
                 {/* Right: Today's sales listing */}
                 <section
                     className={cn(
                         "min-h-[60vh] rounded-md bg-background p-2 md:p-3 overflow-y-auto",
-                        // Plein écran sur tablette quand on affiche la liste
-                        showSalesOnTablet ? "block" : "hidden",
-                        // En desktop, toujours visible et prend 2 colonnes
-                        "lg:col-span-2 lg:block lg:max-h-[calc(100vh-140px)]"
+                        hasLeft ? (showSalesOnTablet ? "block lg:col-span-2 lg:block" : "hidden lg:col-span-2 lg:block") : "block",
+                        "lg:max-h-[calc(100vh-140px)]"
                     )}
                 >
                     <div className="mb-2 flex items-center justify-between gap-2 md:mb-3">
                         <h2 className="text-base font-semibold md:text-lg">Ventes du jour</h2>
                         <div className="flex items-center gap-2">
-                            {/* Bouton retour au formulaire sur tablette quand la liste est affichée */}
-                            <Button type="button" variant="outline" className="lg:hidden" onClick={onToggleSalesOnTablet}>
-                                Créer une vente
-                            </Button>
+                            {hasLeft && (
+                                <Button type="button" variant="outline" className="lg:hidden" onClick={onToggleSalesOnTablet}>
+                                    Créer une vente
+                                </Button>
+                            )}
                             <SalesToolbar />
                         </div>
                     </div>
+
+                    {/* Slot pour contenu additionnel (statistiques, filtres, etc.) */}
+                    {children}
+
                     <SalesDataTable rows={sales ?? []} onEdit={onEditSale} onView={onViewSale} />
                 </section>
             </div>

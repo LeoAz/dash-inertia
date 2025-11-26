@@ -3,7 +3,7 @@ import { AppShell } from '@/components/app-shell';
 import Logo from '@/components/navbar-components/logo';
 import UserMenu from '@/components/navbar-components/user-menu';
 import { Toaster } from "@/components/ui/sonner"
-import SecondaryNav from '@/components/secondary-nav';
+import { Button } from '@/components/ui/button'
 import {
     Breadcrumb,
     BreadcrumbEllipsis,
@@ -29,14 +29,20 @@ import type { BreadcrumbItem as TBreadcrumbItem } from '@/types';
 import type { PropsWithChildren } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { setUrlDefaults } from '@/wayfinder';
+import { shopMenu as shopMenuRoute } from '@/routes/shops'
+import { LayoutGrid } from 'lucide-react'
 
 export default function AppHeaderLayout(
     props: PropsWithChildren<{ breadcrumbs?: TBreadcrumbItem[]; contentFullWidth?: boolean; contentClassName?: string; hideSecondaryNav?: boolean }>,
 ) {
-    const { children, contentFullWidth, contentClassName, hideSecondaryNav } = props as PropsWithChildren<{ breadcrumbs?: TBreadcrumbItem[]; contentFullWidth?: boolean; contentClassName?: string; hideSecondaryNav?: boolean }>;
-    const { props: pageProps } = usePage<{ auth?: { shops?: Array<{ id: number | string; name: string }> } }>();
+    const { children, contentFullWidth, contentClassName } = props as PropsWithChildren<{ breadcrumbs?: TBreadcrumbItem[]; contentFullWidth?: boolean; contentClassName?: string; hideSecondaryNav?: boolean }>;
+    const { props: pageProps } = usePage<{ auth?: { shops?: Array<{ id: number | string; name: string }>; user?: { roles?: string[] } } }>();
     const shops = pageProps.auth?.shops ?? [];
     const firstId = shops.length > 0 ? String(shops[0].id) : undefined;
+    const roles = pageProps.auth?.user?.roles ?? [];
+    const isSuper = roles.includes('Super admin');
+    const isAdmin = roles.includes('admin');
+    const isVendeur = roles.includes('vendeur');
 
     const currentShopId = (() => {
         if (typeof window !== 'undefined') {
@@ -62,6 +68,16 @@ export default function AppHeaderLayout(
     };
 
     const selectValue = currentShopId ?? firstId;
+    const logoHref = (() => {
+        if (isSuper) {
+            return '/home-menu';
+        }
+        if (isAdmin || isVendeur) {
+            const sid = currentShopId ?? firstId;
+            return sid ? `/shops/${sid}/shop-menu` : '/';
+        }
+        return '/';
+    })();
 
     return (
         <AppShell>
@@ -72,9 +88,9 @@ export default function AppHeaderLayout(
                         <Breadcrumb>
                             <BreadcrumbList>
                                 <BreadcrumbItem>
-                                    <BreadcrumbLink href="#" className="text-foreground">
+                                    <Link href={logoHref} className="text-foreground" prefetch>
                                         <Logo />
-                                    </BreadcrumbLink>
+                                    </Link>
                                 </BreadcrumbItem>
                                 <BreadcrumbSeparator> / </BreadcrumbSeparator>
                                 {/* On mobile and tablet, show a compact dropdown. Show full crumb text on large screens. */}
@@ -116,12 +132,25 @@ export default function AppHeaderLayout(
                     <div className="flex items-center gap-4">
                         {/* Quick admin links (Super admin only) */}
                         <HeaderAdminLinks />
+                        {/* Accès direct au menu de la boutique (tous rôles) */}
+                        {selectValue && (
+                            <Button asChild size="sm" variant="default">
+                                <Link
+                                    href={shopMenuRoute.url({ shop: selectValue })}
+                                    prefetch
+                                    aria-label="Menu Boutique"
+                                >
+                                    <LayoutGrid className="h-4 w-4" />
+                                    <span className="ml-2 hidden md:inline">Menu Boutique</span>
+                                </Link>
+                            </Button>
+                        )}
                         {/* User menu */}
                         <UserMenu />
                     </div>
                 </div>
             </header>
-            {!hideSecondaryNav && <SecondaryNav /> }
+            {/* Secondary navigation supprimée selon refactor */}
             <AppContent fullWidth={contentFullWidth} className={contentClassName}>{children}</AppContent>
             <Toaster />
         </AppShell>

@@ -59,6 +59,14 @@ class SaleController extends Controller
                     ->orWhere('sales.customer_name', 'like', "%{$q}%")
                     ->orWhereHas('hairdresser', function ($h) use ($q) {
                         $h->where('name', 'like', "%{$q}%");
+                    })
+                    ->orWhereHas('products', function ($p) use ($q) {
+                        // match on product name
+                        $p->where('products.name', 'like', "%{$q}%");
+                    })
+                    ->orWhereHas('services', function ($s) use ($q) {
+                        // match on service name
+                        $s->where('services.name', 'like', "%{$q}%");
                     });
             });
         }
@@ -132,6 +140,56 @@ class SaleController extends Controller
         ];
 
         return response()->json($data);
+    }
+
+    /**
+     * Suggestions for client autocompletion (name and phone) scoped to a shop.
+     */
+    public function clientSuggestions(Shop $shop, Request $request)
+    {
+        $q = trim((string) $request->string('q')->toString());
+        $limit = (int) ($request->integer('limit') ?: 10);
+        $limit = $limit > 0 && $limit <= 50 ? $limit : 10;
+
+        // Build base query: most recent sales first, select only the 2 fields
+        $base = Sale::query()
+            ->where('sales.shop_id', $shop->id)
+            ->select(['customer_name', 'customer_phone'])
+            ->orderByDesc('id');
+
+        if ($q !== '') {
+            $base->where(function ($sub) use ($q) {
+                $sub->where('customer_name', 'like', "%{$q}%")
+                    ->orWhere('customer_phone', 'like', "%{$q}%");
+            });
+        }
+
+        // We cannot distinct on both columns portably with order by, so fetch a reasonable window and then unique in PHP
+        $rows = $base->limit(200)->get();
+
+        $seen = [];
+        $out = [];
+        foreach ($rows as $row) {
+            $name = (string) ($row->customer_name ?? '');
+            $phone = (string) ($row->customer_phone ?? '');
+            if ($name === '' && $phone === '') {
+                continue;
+            }
+            $key = strtolower($name).'|'.preg_replace('/\D+/', '', $phone);
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $out[] = [
+                'name' => $name,
+                'phone' => $phone,
+            ];
+            if (count($out) >= $limit) {
+                break;
+            }
+        }
+
+        return response()->json($out);
     }
 
     public function index(Shop $shop, Request $request): Response

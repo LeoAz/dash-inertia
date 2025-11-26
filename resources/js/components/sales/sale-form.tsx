@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { router, usePage } from '@inertiajs/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+// Popover pour dropdown suggestions
+import { Popover, PopoverContent, PopoverTrigger, PopoverAnchor } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { fr } from 'date-fns/locale'
@@ -76,6 +77,56 @@ export default function SaleForm({
     const [selectedPromotionId, setSelectedPromotionId] = useState<string>(
         initial?.promotion_id ? String(initial.promotion_id) : ''
     )
+
+    /* --------------  Autocomplete client (nom & téléphone) ----------------- */
+    type ClientSuggestion = { name: string; phone: string }
+    const [suggestions, setSuggestions] = useState<ClientSuggestion[]>([])
+    const [openName, setOpenName] = useState(false)
+    const [openPhone, setOpenPhone] = useState(false)
+    const debounceRef = useRef<number | null>(null)
+
+    const shopId = typeof props.shop.id === 'object' ? (props.shop.id as any).id : props.shop.id
+
+    function fetchSuggestions(q: string) {
+        if (!q || q.trim().length < 1) {
+            setSuggestions([])
+            return
+        }
+        // Construire l'URL de façon déterministe (sans helper) pour éviter tout souci de bundler/HMR
+        const url = `/shops/${shopId}/sales/client-suggestions?q=${encodeURIComponent(q)}&limit=8`
+        fetch(url, { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+            .then((r) => (r.ok ? r.json() : []))
+            .then((data: ClientSuggestion[]) => setSuggestions(Array.isArray(data) ? data : []))
+            .catch(() => setSuggestions([]))
+    }
+
+    const onChangeName = (v: string) => {
+        setCustomerName(v)
+        setOpenName(true)
+        // Trigger an immediate fetch to ensure at least one request is sent
+        if (v.trim().length >= 1) {
+            fetchSuggestions(v)
+        }
+        if (debounceRef.current) window.clearTimeout(debounceRef.current)
+        debounceRef.current = window.setTimeout(() => fetchSuggestions(v), 180)
+    }
+
+    const onChangePhone = (v: string) => {
+        setCustomerPhone(v)
+        setOpenPhone(true)
+        if (v.trim().length >= 1) {
+            fetchSuggestions(v)
+        }
+        if (debounceRef.current) window.clearTimeout(debounceRef.current)
+        debounceRef.current = window.setTimeout(() => fetchSuggestions(v), 180)
+    }
+
+    function chooseSuggestion(s: ClientSuggestion) {
+        setCustomerName(s.name || '')
+        setCustomerPhone(s.phone || '')
+        setOpenName(false)
+        setOpenPhone(false)
+    }
 
     /* --------------  Réinitialisation si `initial` change  ----------------- */
     useEffect(() => {
@@ -261,24 +312,116 @@ export default function SaleForm({
                     <div className="grid gap-4 md:grid-cols-2">
                         <div className="grid gap-1.5">
                             <Label htmlFor="customer_name">Nom du client</Label>
-                            <Input
-                                id="customer_name"
-                                value={customerName}
-                                onChange={(e) => setCustomerName(e.target.value)}
-                                placeholder="Nom du client"
-                                aria-label="Nom du client"
-                            />
+                            <Popover open={openName} onOpenChange={setOpenName}>
+                                {/* Use an explicit anchor to avoid relying on Trigger cloning */}
+                                <PopoverAnchor asChild>
+                                    <Input
+                                        id="customer_name"
+                                        value={customerName}
+                                        onChange={(e) => onChangeName(e.target.value)}
+                                        onFocus={() => {
+                                            if (customerName) {
+                                                setOpenName(true)
+                                                fetchSuggestions(customerName)
+                                            } else {
+                                                // Ouvre le popover dès la frappe du premier caractère
+                                                setOpenName(true)
+                                            }
+                                        }}
+                                        placeholder="Nom du client"
+                                        aria-label="Nom du client"
+                                        autoComplete="off"
+                                        onInput={(e) => {
+                                            const v = (e.target as HTMLInputElement).value
+                                            if (v.trim().length >= 1) {
+                                                setOpenName(true)
+                                                fetchSuggestions(v)
+                                            }
+                                        }}
+                                    />
+                                </PopoverAnchor>
+                                {/* Force width to match anchor; provide a safe fallback so content is visible even if var is undefined */}
+                                <PopoverContent
+                                    align="start"
+                                    className="p-0"
+                                    style={{ width: 'var(--radix-popper-anchor-width, 16rem)' }}
+                                >
+                                    {suggestions.length === 0 ? (
+                                        <div className="p-2 text-sm text-muted-foreground">Aucune suggestion</div>
+                                    ) : (
+                                        <ul className="max-h-56 overflow-auto divide-y">
+                                            {suggestions.map((s, i) => (
+                                                <li
+                                                    key={`${s.name}-${s.phone}-${i}`}
+                                                    className="px-3 py-2 hover:bg-muted cursor-pointer text-sm"
+                                                    onMouseDown={(e) => e.preventDefault()}
+                                                    onClick={() => chooseSuggestion(s)}
+                                                >
+                                                    <div className="font-medium text-foreground">{s.name || '—'}</div>
+                                                    {s.phone && <div className="text-xs text-muted-foreground">{s.phone}</div>}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </PopoverContent>
+                            </Popover>
                             {errors.customer_name && <div className="text-xs text-destructive">{String(errors.customer_name)}</div>}
                         </div>
                         <div className="grid gap-1.5">
                             <Label htmlFor="customer_phone">Téléphone</Label>
-                            <Input
-                                id="customer_phone"
-                                value={customerPhone}
-                                onChange={(e) => setCustomerPhone(e.target.value)}
-                                placeholder="Téléphone"
-                                aria-label="Téléphone"
-                            />
+                            <Popover open={openPhone} onOpenChange={setOpenPhone}>
+                                {/* Use an explicit anchor to avoid relying on Trigger cloning */}
+                                <PopoverAnchor asChild>
+                                    <Input
+                                        id="customer_phone"
+                                        value={customerPhone}
+                                        onChange={(e) => onChangePhone(e.target.value)}
+                                        onFocus={() => {
+                                            if (customerPhone) {
+                                                setOpenPhone(true)
+                                                fetchSuggestions(customerPhone)
+                                            } else {
+                                                setOpenPhone(true)
+                                            }
+                                        }}
+                                        placeholder="Téléphone"
+                                        aria-label="Téléphone"
+                                        autoComplete="off"
+                                        inputMode="tel"
+                                        onInput={(e) => {
+                                            const v = (e.target as HTMLInputElement).value
+                                            if (v.trim().length >= 1) {
+                                                setOpenPhone(true)
+                                                fetchSuggestions(v)
+                                            }
+                                        }}
+                                    />
+                                </PopoverAnchor>
+                                {/* Force width to match anchor; provide a safe fallback so content is visible even if var is undefined */}
+                                <PopoverContent
+                                    align="start"
+                                    className="p-0"
+                                    style={{ width: 'var(--radix-popper-anchor-width, 16rem)' }}
+                                >
+                                    {suggestions.length === 0 ? (
+                                        <div className="p-2 text-sm text-muted-foreground">Aucune suggestion</div>
+                                    ) : (
+                                        <ul className="max-h-56 overflow-auto divide-y">
+                                            {suggestions.map((s, i) => (
+                                                <li
+                                                    key={`${s.name}-${s.phone}-${i}`}
+                                                    className="px-3 py-2 hover:bg-muted cursor-pointer text-sm"
+                                                    onMouseDown={(e) => e.preventDefault()}
+                                                    onClick={() => chooseSuggestion(s)}
+                                                >
+                                                    <div className="font-medium text-foreground">{s.phone || '—'}</div>
+                                                    {s.name && <div className="text-xs text-muted-foreground">{s.name}</div>}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </PopoverContent>
+                            </Popover>
                             {errors.customer_phone && <div className="text-xs text-destructive">{String(errors.customer_phone)}</div>}
                         </div>
                         <div className="grid gap-1.5">
@@ -304,21 +447,82 @@ export default function SaleForm({
                             </Popover>
                             {errors.sale_date && <div className="text-xs text-destructive">{String(errors.sale_date)}</div>}
                         </div>
-                        <div className="grid gap-1.5">
-                            <Label htmlFor="hairdresser">Coiffeur</Label>
-                            <Select value={hairdresserId} onValueChange={setHairdresserId}>
-                                <SelectTrigger id="hairdresser" aria-label="Coiffeur">
-                                    <SelectValue placeholder="Sélectionner un coiffeur" />
+                        {/* Le choix du coiffeur est déplacé dans une section dédiée sous Produits */}
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* === Services (doit apparaître avant Produits) === */}
+            <Card>
+                <CardHeader className="py-2">
+                    <CardTitle className="text-sm">Services</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 pb-6">
+                    <div className="flex flex-wrap items-end gap-2">
+                        <div className="min-w-[220px] grow">
+                            <Select value={selectedServiceId} onValueChange={setSelectedServiceId}>
+                                <SelectTrigger aria-label="Service">
+                                    <SelectValue placeholder="Sélectionner un service" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {hairdressers.map((h) => (
-                                        <SelectItem key={h.id} value={String(h.id)}>
-                                            {h.name}
+                                    {serviceOptions.map((s) => (
+                                        <SelectItem key={s.id} value={String(s.id)}>
+                                            {s.name} — {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(s.price)}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {errors.hairdresser_id && <div className="text-xs text-destructive">{String(errors.hairdresser_id)}</div>}
+                            {errors['services.0.service_id'] && (
+                                <div className="mt-1 text-xs text-destructive">{String(errors['services.0.service_id'])}</div>
+                            )}
+                        </div>
+                        <Button type="button" onClick={addService} className="shrink-0">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Ajouter
+                        </Button>
+                    </div>
+
+                    <div className="overflow-hidden rounded-md border">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/50">
+                                    <TableHead className="h-9 py-2">Service</TableHead>
+                                    <TableHead className="h-9 w-[120px] py-2 text-right">Prix</TableHead>
+                                    <TableHead className="h-9 w-[80px] py-2"></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {serviceLines.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="py-3 text-center text-sm text-muted-foreground">
+                                            Aucun service ajouté
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                                {serviceLines.map((line, idx) => {
+                                    const s = findService(line.service_id)!
+                                    return (
+                                        <TableRow key={`srv-${idx}`}>
+                                            <TableCell className="py-2">{s.name}</TableCell>
+                                            <TableCell className="py-2 text-right">
+                                                {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(s.price)}
+                                            </TableCell>
+                                            <TableCell className="py-2 text-right">
+                                                <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={() => removeService(idx)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3 text-sm">
+                        <div className="text-muted-foreground">Total services :</div>
+                        <div className="font-medium">
+                            {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(servicesSubtotal)}
                         </div>
                     </div>
                 </CardContent>
@@ -413,78 +617,27 @@ export default function SaleForm({
                 </CardContent>
             </Card>
 
-            {/* === Services === */}
+            {/* === Coiffeur (section dédiée, sous Produits) === */}
             <Card>
                 <CardHeader className="py-2">
-                    <CardTitle className="text-sm">Services</CardTitle>
+                    <CardTitle className="text-sm">Coiffeur</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3 pb-6">
-                    <div className="flex flex-wrap items-end gap-2">
-                        <div className="min-w-[220px] grow">
-                            <Select value={selectedServiceId} onValueChange={setSelectedServiceId}>
-                                <SelectTrigger aria-label="Service">
-                                    <SelectValue placeholder="Sélectionner un service" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {serviceOptions.map((s) => (
-                                        <SelectItem key={s.id} value={String(s.id)}>
-                                            {s.name} — {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(s.price)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {errors['services.0.service_id'] && (
-                                <div className="mt-1 text-xs text-destructive">{String(errors['services.0.service_id'])}</div>
-                            )}
-                        </div>
-                        <Button type="button" onClick={addService} className="shrink-0">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Ajouter
-                        </Button>
-                    </div>
-
-                    <div className="overflow-hidden rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-muted/50">
-                                    <TableHead className="h-9 py-2">Service</TableHead>
-                                    <TableHead className="h-9 w-[120px] py-2 text-right">Prix</TableHead>
-                                    <TableHead className="h-9 w-[80px] py-2"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {serviceLines.length === 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={3} className="py-3 text-center text-sm text-muted-foreground">
-                                            Aucun service ajouté
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                                {serviceLines.map((line, idx) => {
-                                    const s = findService(line.service_id)!
-                                    return (
-                                        <TableRow key={`srv-${idx}`}>
-                                            <TableCell className="py-2">{s.name}</TableCell>
-                                            <TableCell className="py-2 text-right">
-                                                {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(s.price)}
-                                            </TableCell>
-                                            <TableCell className="py-2 text-right">
-                                                <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={() => removeService(idx)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-3 text-sm">
-                        <div className="text-muted-foreground">Total services :</div>
-                        <div className="font-medium">
-                            {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(servicesSubtotal)}
-                        </div>
+                <CardContent className="pb-6">
+                    <div className="grid gap-1.5 md:max-w-sm">
+                        <Label htmlFor="hairdresser">Coiffeur</Label>
+                        <Select value={hairdresserId} onValueChange={setHairdresserId}>
+                            <SelectTrigger id="hairdresser" aria-label="Coiffeur">
+                                <SelectValue placeholder="Sélectionner un coiffeur" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {hairdressers.map((h) => (
+                                    <SelectItem key={h.id} value={String(h.id)}>
+                                        {h.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        {errors.hairdresser_id && <div className="text-xs text-destructive">{String(errors.hairdresser_id)}</div>}
                     </div>
                 </CardContent>
             </Card>

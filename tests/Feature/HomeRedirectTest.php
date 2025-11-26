@@ -20,40 +20,43 @@ it('redirects guest to login', function () {
     $this->get(route('home'))->assertRedirect(route('login'));
 });
 
-it('redirects super admin to admin users index', function () {
+it('redirects super admin to home menu', function () {
     $user = userWithRole('Super admin');
 
     $this->actingAs($user)
         ->get(route('home'))
-        ->assertRedirect(route('admin.users.index'));
+        ->assertRedirect(route('home.menu'));
 });
 
-it('redirects admin to admin shops index', function () {
+it('redirects admin to home menu', function () {
     $user = userWithRole('admin');
 
     $this->actingAs($user)
         ->get(route('home'))
-        ->assertRedirect(route('admin.shops.index'));
+        ->assertRedirect(route('home.menu'));
 });
 
-it('redirects vendor to first shop dashboard', function () {
+it('redirects vendor to shop-scoped shop menu', function () {
     $user = userWithRole('vendeur');
+    // Create a couple of shops and attach to the user
     $shopA = Shop::factory()->create();
     $shopB = Shop::factory()->create();
     // Attach in reverse order to ensure ordering by shops.id is respected
     $user->shops()->sync([$shopB->id, $shopA->id]);
 
+    $firstId = min($shopA->id, $shopB->id);
+
     $this->actingAs($user)
         ->get(route('home'))
-        ->assertRedirect(route('shops.dashboard', ['shop' => min($shopA->id, $shopB->id)]));
+        ->assertRedirect(route('shops.shop-menu', ['shop' => $firstId]));
 });
 
-it('redirects authenticated non-admin without shops to default dashboard', function () {
+it('redirects authenticated non-admin without shops to no-shop page', function () {
     $user = userWithRole('vendeur');
     // Ensure this vendor has no shops (UserFactory attaches by default)
     $user->shops()->sync([]);
 
     $this->actingAs($user)
         ->get(route('home'))
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('no-shop'));
 });

@@ -38,3 +38,60 @@ it('shows sales history page and filters by date range', function () {
         ->has('sales.data', 1)
     );
 });
+
+it('can search sales by product name', function () {
+    $user = \App\Models\User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->create();
+
+    // Create a product and a sale containing that product
+    $product = \App\Models\Product::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Shampoing Ultra',
+    ]);
+
+    $sale = Sale::factory()->for($shop)->create();
+    $sale->products()->attach($product->id, [
+        'quantity' => 2,
+        'unit_price' => 1500,
+        'subtotal' => 3000,
+    ]);
+
+    $this->actingAs($user);
+
+    $resp = $this->get(route('shops.sales.history', [$shop, 'q' => 'Shampoing']));
+
+    $resp->assertSuccessful();
+    $resp->assertInertia(fn ($page) => $page
+        ->component('sales/all-sales')
+        ->has('sales.data', 1)
+        ->where('sales.data.0.id', $sale->id)
+    );
+});
+
+it('can search sales by service name', function () {
+    $user = \App\Models\User::factory()->create(['email_verified_at' => now()]);
+    $shop = Shop::factory()->create();
+
+    // Create a service and a sale containing that service
+    $service = \App\Models\Service::factory()->create([
+        'shop_id' => $shop->id,
+        'name' => 'Brushing Deluxe',
+    ]);
+
+    $sale = Sale::factory()->for($shop)->create();
+    $sale->services()->attach($service->id, [
+        'unit_price' => 2000,
+        'subtotal' => 2000,
+    ]);
+
+    $this->actingAs($user);
+
+    $resp = $this->get(route('shops.sales.history', [$shop, 'q' => 'Brushing']));
+
+    $resp->assertSuccessful();
+    $resp->assertInertia(fn ($page) => $page
+        ->component('sales/all-sales')
+        ->has('sales.data', 1)
+        ->where('sales.data.0.id', $sale->id)
+    );
+});
