@@ -12,6 +12,15 @@ class Product extends Model
     /** @use HasFactory<\Database\Factories\ProductFactory> */
     use HasFactory;
 
+    protected $fillable = [
+        'shop_id',
+        'name',
+        'quantity',
+        'description',
+        'price',
+        'image_path',
+    ];
+
     protected $casts = [
         'price' => 'decimal:2',
     ];

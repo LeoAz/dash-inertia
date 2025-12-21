@@ -127,8 +127,9 @@ class SaleController extends Controller
             'id' => $sale->id,
             'customer_name' => (string) ($sale->customer_name ?? ''),
             'customer_phone' => (string) ($sale->customer_phone ?? ''),
-            'sale_date' => optional($sale->sale_date)?->toDateString(),
+            'sale_date' => optional($sale->sale_date)?->toISOString(),
             'hairdresser_id' => $sale->hairdresser_id,
+            'payment_method' => $sale->payment_method,
             'promotion_id' => $sale->promotion_id,
             'products' => $sale->products->map(fn ($p) => [
                 'product_id' => (int) $p->id,
@@ -201,6 +202,10 @@ class SaleController extends Controller
         $sort = (string) $request->string('sort')->toString();
         $dir = strtolower((string) $request->string('dir')->toString());
         $dir = in_array($dir, ['asc', 'desc'], true) ? $dir : 'desc';
+        $dateParam = $request->string('date')->toString();
+        $isUserAdmin = $request->user()?->hasRole('admin') || $request->user()?->hasRole('Super admin');
+
+        $date = ($isUserAdmin && $dateParam) ? $dateParam : today()->toDateString();
 
         // Allowlist of sortable fields
         $sortable = ['receipt_number', 'sale_date', 'customer_name', 'total_amount', 'hairdresser_name'];
@@ -210,7 +215,7 @@ class SaleController extends Controller
 
         $query = Sale::query()
             ->where('sales.shop_id', $shop->id)
-            ->whereDate('sales.sale_date', today())
+            ->whereDate('sales.sale_date', $date)
             ->leftJoin('receipts', 'receipts.sale_id', '=', 'sales.id')
             ->with([
                 'hairdresser:id,name',
@@ -257,11 +262,13 @@ class SaleController extends Controller
                 'sort' => $sort,
                 'dir' => $dir,
                 'perPage' => $perPage,
+                'date' => $date,
             ],
             'shop' => [
                 'id' => $shop->id,
                 'name' => $shop->name,
             ],
+            'can_filter_by_date' => $isUserAdmin,
             // Data sources for selects in the create/edit form
             'products' => Product::query()
                 ->where('shop_id', $shop->id)
@@ -385,14 +392,16 @@ class SaleController extends Controller
             $servicesTotal = 0.0;
             foreach ($serviceItems as $row) {
                 $sid = (int) $row['service_id'];
+                $qty = (int) ($row['quantity'] ?? 1);
                 $s = $services->firstWhere('id', $sid);
                 if (! $s) {
                     continue;
                 }
                 $unit = (float) $s->price;
-                $subtotal = round($unit, 2);
+                $subtotal = round($unit * $qty, 2);
                 $servicesTotal += $subtotal;
                 $pivotServices[$sid] = [
+                    'quantity' => $qty,
                     'unit_price' => $unit,
                     'subtotal' => $subtotal,
                 ];
@@ -408,6 +417,8 @@ class SaleController extends Controller
             $sale->customer_phone = (string) $data['customer_phone'];
             $sale->sale_date = $data['sale_date'] ?? now();
             $sale->status = 'En attente';
+            // Payment method is required via validation
+            $sale->payment_method = $data['payment_method'];
             $sale->hairdresser_id = $data['hairdresser_id'] ?? null;
             $sale->total_amount = $gross; // will adjust after promotion
             $sale->save();
@@ -495,8 +506,7 @@ class SaleController extends Controller
         $user = $request->user();
         $isSuper = $user?->hasRole('Super admin') ?? false;
         $isAdmin = ($user?->hasRole('admin') ?? false) && ($user?->shops()->whereKey($shop->id)->exists() ?? false);
-        $isSeller = ($user?->hasRole('vendeur') ?? false) && ($user?->shops()->whereKey($shop->id)->exists() ?? false);
-        abort_unless($isSuper || $isAdmin || $isSeller, 403);
+        abort_unless($isSuper || $isAdmin, 403);
 
         $data = $request->validated();
 
@@ -513,6 +523,9 @@ class SaleController extends Controller
             }
             if (array_key_exists('hairdresser_id', $data)) {
                 $sale->hairdresser_id = $data['hairdresser_id'] ?? null;
+            }
+            if (array_key_exists('payment_method', $data)) {
+                $sale->payment_method = $data['payment_method'];
             }
 
             // Items
@@ -616,14 +629,16 @@ class SaleController extends Controller
                 $pivotServices = [];
                 foreach ($serviceItems as $row) {
                     $sid = (int) $row['service_id'];
+                    $qty = (int) ($row['quantity'] ?? 1);
                     $s = $services->firstWhere('id', $sid);
                     if (! $s) {
                         continue;
                     }
                     $unit = (float) $s->price;
-                    $subtotal = round($unit, 2);
+                    $subtotal = round($unit * $qty, 2);
                     $servicesTotal += $subtotal;
                     $pivotServices[$sid] = [
+                        'quantity' => $qty,
                         'unit_price' => $unit,
                         'subtotal' => $subtotal,
                     ];

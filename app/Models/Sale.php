@@ -14,7 +14,7 @@ class Sale extends Model
     use HasFactory;
 
     protected $casts = [
-        'sale_date' => 'date',
+        'sale_date' => 'datetime',
         'total_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
     ];
@@ -54,7 +54,7 @@ class Sale extends Model
     public function services(): BelongsToMany
     {
         return $this->belongsToMany(Service::class, 'service_sales')
-            ->withPivot('unit_price', 'subtotal')
+            ->withPivot('quantity', 'unit_price', 'subtotal')
             ->withTimestamps();
     }
 

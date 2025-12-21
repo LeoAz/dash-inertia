@@ -124,6 +124,7 @@ export default function AllSalesPage() {
               <TableRow className="bg-muted/50">
                 <TableHead className="h-9 py-2">Date</TableHead>
                 <TableHead className="h-9 py-2">N° reçu</TableHead>
+                <TableHead className="h-9 py-2">Paiement</TableHead>
                 <TableHead className="h-9 py-2">Client</TableHead>
                 <TableHead className="h-9 py-2">Coiffeur</TableHead>
                 <TableHead className="h-9 py-2">Produits</TableHead>
@@ -134,13 +135,24 @@ export default function AllSalesPage() {
             <TableBody>
               {rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="py-2 text-center text-muted-foreground">Aucune vente trouvée</TableCell>
+                  <TableCell colSpan={8} className="py-2 text-center text-muted-foreground">Aucune vente trouvée</TableCell>
                 </TableRow>
               )}
               {rows.map((r) => (
                 <TableRow key={String(r.id)}>
-                  <TableCell className="py-2">{format(new Date(r.sale_date), 'dd/MM/yyyy')}</TableCell>
+                  <TableCell className="py-2">{format(new Date(r.sale_date), 'dd/MM/yyyy HH:mm')}</TableCell>
                   <TableCell className="py-2">{r.receipt_number ?? '—'}</TableCell>
+                  <TableCell className="py-2">
+                    {r.payment_method === 'orange_money' ? (
+                      <span className="rounded bg-orange-100 px-1 py-0.5 text-xs font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                        Orange Money
+                      </span>
+                    ) : (
+                      <span className="rounded bg-green-100 px-1 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                        Espèces
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell className="py-2">{r.customer_name ?? '—'}</TableCell>
                   <TableCell className="py-2">{r.hairdresser_name ?? '—'}</TableCell>
                   <TableCell className="py-2">

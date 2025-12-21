@@ -35,6 +35,7 @@ export default function ServicesIndex({ services, shop }: ServicePageProps) {
               <TableRow className="bg-muted/50">
                 <TableHead className="h-9 py-2">Nom</TableHead>
                 <TableHead className="h-9 py-2">Prix</TableHead>
+                <TableHead className="h-9 py-2">Quantité</TableHead>
                 <TableHead className="h-9 py-2">Description</TableHead>
                 <TableHead className="h-9 py-2 text-right">Actions</TableHead>
               </TableRow>
@@ -44,6 +45,7 @@ export default function ServicesIndex({ services, shop }: ServicePageProps) {
                 <TableRow key={s.id}>
                   <TableCell className="py-2 font-medium">{s.name}</TableCell>
                   <TableCell className="py-2">{Number(s.price).toFixed(2)}</TableCell>
+                  <TableCell className="py-2">{s.quantity}</TableCell>
                   <TableCell className="py-2">{s.description ?? '—'}</TableCell>
                   <TableCell className="py-2 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -165,8 +167,14 @@ function ServiceFormModal({
           defaults={isEdit ? {
             name: (service as Service).name,
             price: (service as Service).price,
+            quantity: (service as Service).quantity,
             description: (service as Service).description ?? '',
-          } : undefined}
+          } : {
+            name: '',
+            price: '',
+            quantity: 1,
+            description: '',
+          }}
         >
           {({ errors, processing }) => (
             <>
@@ -179,6 +187,11 @@ function ServiceFormModal({
                 <Label htmlFor={isEdit ? 'edit-price' : 'price'}>Prix</Label>
                 <Input id={isEdit ? 'edit-price' : 'price'} name="price" type="number" step="0.01" min={0} required defaultValue={isEdit ? (service as Service).price : undefined} />
                 <InputError message={errors.price} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor={isEdit ? 'edit-quantity' : 'quantity'}>Quantité</Label>
+                <Input id={isEdit ? 'edit-quantity' : 'quantity'} name="quantity" type="number" min={0} required defaultValue={isEdit ? (service as Service).quantity : 1} />
+                <InputError message={errors.quantity} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor={isEdit ? 'edit-description' : 'description'}>Description</Label>

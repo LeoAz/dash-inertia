@@ -62,10 +62,10 @@ class Promotion extends Model
             return false;
         }
 
-        if ($this->starts_at && $date->lt($this->starts_at)) {
+        if ($this->starts_at && $date->lt(Carbon::parse($this->starts_at))) {
             return false;
         }
-        if ($this->ends_at && $date->gt($this->ends_at)) {
+        if ($this->ends_at && $date->gt(Carbon::parse($this->ends_at))) {
             return false;
         }
 

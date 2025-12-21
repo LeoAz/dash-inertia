@@ -13,6 +13,7 @@ class Service extends Model
 
     protected $casts = [
         'price' => 'decimal:2',
+        'quantity' => 'integer',
     ];
 
     public function shop(): BelongsTo

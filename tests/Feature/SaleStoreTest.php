@@ -7,7 +7,6 @@ use App\Models\Service;
 use App\Models\Shop;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Carbon;
 
 uses(RefreshDatabase::class);
 
@@ -23,13 +22,14 @@ it('stores a sale with products and services and computes totals', function () {
     $payload = [
         'customer_name' => 'Alice',
         'customer_phone' => '01020304',
-        'sale_date' => Carbon::today()->toDateString(),
+        'sale_date' => now()->format('Y-m-d H:i:s'),
+        'payment_method' => 'caisse',
         'products' => [
             ['product_id' => $p1->id, 'quantity' => 2],
             ['product_id' => $p2->id, 'quantity' => 1],
         ],
         'services' => [
-            ['service_id' => $s1->id],
+            ['service_id' => $s1->id, 'quantity' => 2],
         ],
     ];
 
@@ -41,9 +41,9 @@ it('stores a sale with products and services and computes totals', function () {
     expect($sale)->not()->toBeNull();
 
     // Products: 1500*2 + 1000*1 = 4000
-    // Services: 2000
-    // Total = 6000
-    expect((float) $sale->total_amount)->toEqual(6000.0);
+    // Services: 2000*2 = 4000
+    // Total = 8000
+    expect((float) $sale->total_amount)->toEqual(8000.0);
     expect($sale->discount_amount)->toBeNull();
 
     // Pivot assertions
@@ -64,8 +64,9 @@ it('stores a sale with products and services and computes totals', function () {
     $this->assertDatabaseHas('service_sales', [
         'sale_id' => $sale->id,
         'service_id' => $s1->id,
+        'quantity' => 2,
         'unit_price' => 2000,
-        'subtotal' => 2000,
+        'subtotal' => 4000,
     ]);
 });
 
@@ -80,23 +81,25 @@ it('applies percentage promotion to eligible items', function () {
     // 10% only on products
     $promo = Promotion::factory()->for($shop)->create([
         'percentage' => 10,
-        'amount' => null,
+        'amount' => 0,
         'active' => true,
+        'days_of_week' => [], // Ensure no day restriction
         'applicable_to_products' => true,
         'applicable_to_services' => false,
-        'starts_at' => now()->subDay(),
-        'ends_at' => now()->addDay(),
+        'starts_at' => now()->subDay()->startOfDay(),
+        'ends_at' => now()->addDay()->endOfDay(),
     ]);
 
     $payload = [
         'customer_name' => 'Bob',
         'customer_phone' => '0555',
-        'sale_date' => now()->toDateString(),
+        'sale_date' => now()->format('Y-m-d H:i:s'),
+        'payment_method' => 'caisse',
         'products' => [
             ['product_id' => $p1->id, 'quantity' => 3], // 3000 base eligible
         ],
         'services' => [
-            ['service_id' => $s1->id], // 3000 not eligible
+            ['service_id' => $s1->id, 'quantity' => 1], // 3000 not eligible
         ],
         'promotion_id' => $promo->id,
     ];
@@ -124,19 +127,21 @@ it('applies fixed amount promotion capped to eligible base', function () {
 
     // Fixed 5000 on products & services
     $promo = Promotion::factory()->for($shop)->create([
-        'percentage' => null,
+        'percentage' => 0,
         'amount' => 5000,
         'active' => true,
+        'days_of_week' => [], // Ensure no day restriction
         'applicable_to_products' => true,
         'applicable_to_services' => true,
-        'starts_at' => now()->subDay(),
-        'ends_at' => now()->addDay(),
+        'starts_at' => now()->subDay()->startOfDay(),
+        'ends_at' => now()->addDay()->endOfDay(),
     ]);
 
     $payload = [
         'customer_name' => 'Chad',
         'customer_phone' => '0777',
-        'sale_date' => now()->toDateString(),
+        'sale_date' => now()->format('Y-m-d H:i:s'),
+        'payment_method' => 'caisse',
         'products' => [
             ['product_id' => $p1->id, 'quantity' => 2], // 2400 eligible base
         ],

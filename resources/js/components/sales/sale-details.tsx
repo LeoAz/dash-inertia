@@ -3,6 +3,8 @@ import type { SaleRow } from '@/types/sale'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { qrSvg } from '@/lib/qr'
+import { format } from 'date-fns'
+import { fr } from 'date-fns/locale'
 
 // Fonction de formatage des devises
 function formatCurrency(v: number): string {
@@ -150,7 +152,7 @@ export default function SaleDetails({ open, onOpenChange, sale, shop, autoPrint 
                     {sale ? (
                         <div className="space-y-3">
                             <div className="text-sm text-muted-foreground space-y-1">
-                                <div>Date: <span className="text-foreground font-medium">{new Date(sale.sale_date).toLocaleString('fr-FR')}</span></div>
+                                <div>Date: <span className="text-foreground font-medium">{format(new Date(sale.sale_date), 'dd-MM-yyyy HH:mm', { locale: fr })}</span></div>
                                 {sale.customer_name && <div>Client: <span className="text-foreground font-medium">{sale.customer_name}</span></div>}
                                 {sale.hairdresser_name && <div>Coiffeur: <span className="text-foreground font-medium">{sale.hairdresser_name}</span></div>}
                             </div>
@@ -243,10 +245,20 @@ function generatePrintContent({ sale, shop, qrSvgString, promotionAmount }: {
 }) {
     const products = (sale.details ?? []).filter(d => d.type === 'product')
     const services = (sale.details ?? []).filter(d => d.type === 'service')
-    const productsSubtotal = products.reduce((s, p) => s + Number(p.line_subtotal ?? Number(p.unit_price ?? 0) * Number(p.quantity ?? 1)), 0)
+    const unitPriceOf = (item: { unit_price?: number; price?: number }): number => {
+        return Number((item.unit_price ?? item.price ?? 0))
+    }
+    const productsSubtotal = products.reduce((s, p) => s + Number(p.line_subtotal ?? unitPriceOf(p) * Number(p.quantity ?? 1)), 0)
     const servicesSubtotal = services.reduce((s, srv) => s + Number(srv.price ?? 0), 0)
     const subtotal = productsSubtotal + servicesSubtotal
     const total = Number(sale.total_amount ?? 0)
+    const paymentLabel = ((): string | null => {
+        const pm = sale.payment_method
+        if (!pm) { return null }
+        if (pm === 'orange_money') { return 'Orange Money' }
+        if (pm === 'caisse') { return 'Caisse' }
+        return String(pm)
+    })()
 
     const defaultLogo = '/img/logo 1.png'
 
@@ -382,12 +394,13 @@ function generatePrintContent({ sale, shop, qrSvgString, promotionAmount }: {
     <div class="header">
       <img src="${shop?.logo_url || defaultLogo}" alt="Logo" class="logo" onerror="this.style.display='none'">
       ${shop?.name ? `<div class="shop-name">${escapeHtml(shop.name)}</div>` : ''}
-      <div class="info">${new Date(sale.sale_date).toLocaleString('fr-FR')}</div>
+      <div class="info">${format(new Date(sale.sale_date), 'dd-MM-yyyy HH:mm', { locale: fr })}</div>
       <div class="receipt-number">REÇU N° ${escapeHtml(String(sale.receipt_number ?? `000-${sale.id}`))}</div>
       ${shop?.phone ? `<div class="info">Tél: ${escapeHtml(shop.phone)}</div>` : ''}
       ${shop?.address ? `<div class="info">${escapeHtml(shop.address)}</div>` : ''}
       ${sale.customer_name ? `<div class="info">Client: ${escapeHtml(sale.customer_name)}</div>` : ''}
       ${sale.hairdresser_name ? `<div class="info">Coiffeur: ${escapeHtml(sale.hairdresser_name)}</div>` : ''}
+      ${paymentLabel ? `<div class="info">Paiement: ${escapeHtml(paymentLabel)}</div>` : ''}
     </div>
 
     ${products.length ? `
@@ -397,9 +410,9 @@ function generatePrintContent({ sale, shop, qrSvgString, promotionAmount }: {
         <div class="item">
           <div class="item-name">
             ${escapeHtml(p.name)}
-            ${p.quantity ? `<div class="item-details">${p.quantity} × ${formatCurrency(Number(p.unit_price ?? 0))}</div>` : ''}
+            ${p.quantity ? `<div class="item-details">${p.quantity} × ${formatCurrency(unitPriceOf(p))}</div>` : ''}
           </div>
-          <div class="item-price">${formatCurrency(Number(p.line_subtotal ?? Number(p.unit_price ?? 0) * Number(p.quantity ?? 1)))}</div>
+          <div class="item-price">${formatCurrency(Number(p.line_subtotal ?? unitPriceOf(p) * Number(p.quantity ?? 1)))}</div>
         </div>
       `).join('')}
       <div class="item subtotal">

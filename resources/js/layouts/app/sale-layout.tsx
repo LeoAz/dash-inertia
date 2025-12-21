@@ -49,6 +49,8 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { router } from '@inertiajs/react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface SaleLayoutProps {
     breadcrumbs?: Array<{ title: string; href?: string }>;
@@ -173,7 +175,7 @@ function useConfirmDelete() {
 function SalesDataTable({ rows, onEdit, onView }: { rows: SaleRow[]; onEdit?: (row: SaleRow) => void; onView?: (row: SaleRow) => void }) {
     const { props } = usePage<{ auth?: { user?: { roles?: string[] } } }>();
     const roles = props.auth?.user?.roles ?? [];
-    const canEdit = roles.includes('Super admin') || roles.includes('admin') || roles.includes('vendeur');
+    const canEdit = roles.includes('Super admin') || roles.includes('admin');
     const canDelete = roles.includes('Super admin') || roles.includes('admin');
     const [globalFilter, setGlobalFilter] = useState('');
     const [sorting, setSorting] = useState<SortingState>([{ id: 'sale_date', desc: true }]);
@@ -194,13 +196,36 @@ function SalesDataTable({ rows, onEdit, onView }: { rows: SaleRow[]; onEdit?: (r
             header: 'Date',
             accessorKey: 'sale_date',
             size: 140,
-            cell: ({ row }) => new Date(row.original.sale_date).toLocaleDateString('fr-FR'),
+            cell: ({ row }) => {
+                const date = new Date(row.original.sale_date);
+                return (
+                    <div className="flex flex-col">
+                        <span>{format(date, 'dd-MM-yyyy', { locale: fr })}</span>
+                        <span className="text-[10px] text-muted-foreground">{format(date, 'HH:mm', { locale: fr })}</span>
+                    </div>
+                );
+            },
         },
         {
             header: 'Coiffeur',
             accessorKey: 'hairdresser_name',
             size: 160,
             cell: ({ row }) => row.original.hairdresser_name ?? '—',
+        },
+        {
+            header: 'Paiement',
+            accessorKey: 'payment_method',
+            size: 140,
+            cell: ({ row }) => {
+                const method = row.original.payment_method;
+                if (method === 'orange_money') {
+                    return <span className="inline-flex items-center rounded-md bg-orange-500/10 px-2 py-0.5 text-xs font-medium text-orange-700 dark:text-orange-400">Orange Money</span>;
+                }
+                if (method === 'caisse') {
+                    return <span className="inline-flex items-center rounded-md bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-400">Caisse</span>;
+                }
+                return <span className="text-muted-foreground">—</span>;
+            },
         },
         {
             header: 'Client',

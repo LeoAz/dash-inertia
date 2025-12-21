@@ -23,6 +23,7 @@ class UpdateServiceRequest extends FormRequest
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'price' => ['sometimes', 'required', 'numeric', 'min:0'],
+            'quantity' => ['sometimes', 'required', 'integer', 'min:0'],
         ];
     }
 

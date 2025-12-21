@@ -8,6 +8,8 @@ export interface SaleRow {
   receipt_number?: string | null
   customer_name?: string | null
   hairdresser_name?: string | null
+  creator_name?: string | null
+  payment_method?: 'orange_money' | 'caisse'
   /** Decimal number sent as number or string */
   total_amount: number | string
   /** ISO date string */
@@ -53,6 +55,7 @@ export interface SalesPageProps extends PageProps {
     date_to?: string | null
   }
   shop: { id: number | string; name?: string }
+  can_filter_by_date?: boolean
   products: Array<{ id: number; name: string; price: number }>
   services: Array<{ id: number; name: string; price: number }>
   hairdressers: Array<{ id: number; name: string }>

@@ -12,6 +12,7 @@ interface PrintTicketProps {
         customer_phone?: string;
         sale_date: string;
         hairdresser_name?: string;
+        payment_method?: 'orange_money' | 'caisse';
         total_amount: number;
         promotion_label?: string;
         details: Array<{
@@ -129,7 +130,7 @@ export default function PrintTicket({ sale, onClose }: PrintTicketProps) {
                             <div className="text-xs">
                                 {format(
                                     new Date(sale.sale_date),
-                                    'dd/MM/yyyy HH:mm',
+                                    'dd-MM-yyyy HH:mm',
                                     { locale: fr },
                                 )}
                             </div>
@@ -158,6 +159,12 @@ export default function PrintTicket({ sale, onClose }: PrintTicketProps) {
                                 </div>
                             </div>
                         )}
+                        <div className="section">
+                            <div>
+                                <span className="label">Paiement:</span>{' '}
+                                {sale.payment_method === 'orange_money' ? 'Orange Money' : 'Caisse'}
+                            </div>
+                        </div>
                         <div className="section">
                             {sale.details.map((item, idx) => (
                                 <div key={idx} className="item">
@@ -227,7 +234,7 @@ export default function PrintTicket({ sale, onClose }: PrintTicketProps) {
                             <div className="text-gray-600">
                                 {format(
                                     new Date(sale.sale_date),
-                                    'dd/MM/yyyy HH:mm',
+                                    'dd-MM-yyyy HH:mm',
                                     { locale: fr },
                                 )}
                             </div>
@@ -245,6 +252,7 @@ export default function PrintTicket({ sale, onClose }: PrintTicketProps) {
                         {sale.hairdresser_name && (
                             <div>Coiffeur: {sale.hairdresser_name}</div>
                         )}
+                        <div>Paiement: {sale.payment_method === 'orange_money' ? 'Orange Money' : 'Caisse'}</div>
 
                         <hr className="my-2 border-dashed" />
 

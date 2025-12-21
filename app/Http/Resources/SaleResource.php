@@ -36,6 +36,9 @@ class SaleResource extends JsonResource
                 return [
                     'type' => 'service',
                     'name' => (string) ($srv->name ?? ''),
+                    'quantity' => (int) ($srv->pivot->quantity ?? 1),
+                    'unit_price' => (float) ($srv->pivot->unit_price ?? $srv->price ?? 0),
+                    'line_subtotal' => (float) ($srv->pivot->subtotal ?? (($srv->pivot->unit_price ?? $srv->price ?? 0) * max(1, (int) ($srv->pivot->quantity ?? 1)))),
                     'price' => (float) ($srv->pivot->unit_price ?? $srv->price ?? 0),
                 ];
             })->all()
@@ -61,6 +64,8 @@ class SaleResource extends JsonResource
             'receipt_number' => optional($this->receipt)->receipt_number,
             'customer_name' => $this->customer_name,
             'hairdresser_name' => optional($this->hairdresser)->name,
+            'creator_name' => optional($this->user)->name,
+            'payment_method' => $this->payment_method,
             'total_amount' => (float) $this->total_amount,
             'sale_date' => optional($this->sale_date)?->toISOString() ?? now()->toISOString(),
             'promotion_applied' => ! is_null($this->promotion_id),

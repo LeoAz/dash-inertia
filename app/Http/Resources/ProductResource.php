@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @property int $id
@@ -12,6 +13,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @property int $quantity
  * @property string|null $description
  * @property string $price
+ * @property string|null $image_path
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  */
@@ -31,6 +33,7 @@ class ProductResource extends JsonResource
             'quantity' => $this->quantity,
             'description' => $this->description,
             'price' => (string) $this->price,
+            'image_url' => $this->image_path ? Storage::url($this->image_path) : null,
             'created_at' => optional($this->created_at)?->toISOString(),
             'updated_at' => optional($this->updated_at)?->toISOString(),
         ];

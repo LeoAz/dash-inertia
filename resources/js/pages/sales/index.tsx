@@ -18,12 +18,15 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function SalesIndex(props: SalesPageProps) {
-  const { sales, shop } = props
+  const { sales, shop, filters, can_filter_by_date } = props
 
   const [editOpen, setEditOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [detailsSale, setDetailsSale] = useState<SaleRow | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
+
+  const [currentDate, setCurrentDate] = useState<string>(filters?.date || new Date().toISOString().slice(0, 10))
+
   // Sur tablette (<lg), on masque la liste par défaut et on affiche un bouton pour basculer
   const [showSalesList, setShowSalesList] = useState(false)
   type SaleShowPayload = {
@@ -31,6 +34,7 @@ export default function SalesIndex(props: SalesPageProps) {
     customer_name?: string
     customer_phone?: string
     sale_date?: string
+    payment_method?: 'orange_money' | 'caisse'
     promotion_id?: number | null
     products?: { product_id: number; quantity: number }[]
     services?: { service_id: number }[]
@@ -87,6 +91,19 @@ export default function SalesIndex(props: SalesPageProps) {
     return { totalVendu, totalProduits, totalServices }
   }, [rows])
 
+  const handleDateChange = (date: Date | undefined) => {
+    if (!date) return
+    const iso = date.toISOString().slice(0, 10)
+    const shopId = typeof shop.id === 'object' ? (shop.id as any).id : (shop.id as any)
+    router.get(salesRoutes.index.url({ shop: shopId }), {
+      ...filters,
+      date: iso,
+    }, {
+      preserveState: true,
+      only: ['sales', 'filters'],
+    })
+  }
+
   const fmt = (v: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 }).format(v)
 
   return (
@@ -106,10 +123,36 @@ export default function SalesIndex(props: SalesPageProps) {
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Button type="button" onClick={() => setCreateOpen(true)}>Nouvelle vente</Button>
+
+            {can_filter_by_date && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <span className="hidden sm:inline">Ventes du :</span>
+                    {new Date(currentDate + 'T00:00:00').toLocaleDateString('fr-FR')}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    locale={fr}
+                    weekStartsOn={1 as any}
+                    selected={new Date(currentDate + 'T00:00:00')}
+                    onSelect={(d) => {
+                      if (d) {
+                        const iso = d.toISOString().slice(0, 10)
+                        setCurrentDate(iso)
+                        handleDateChange(d)
+                      }
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
           {/* Bouton alternance sur tablette si nécessaire */}
           <Button type="button" className="lg:hidden" variant="outline" onClick={() => setShowSalesList(v => !v)}>
-            {showSalesList ? 'Créer une vente' : 'Voir ventes du jour'}
+            {showSalesList ? 'Créer une vente' : (can_filter_by_date && filters?.date !== new Date().toISOString().slice(0, 10)) ? `Voir ventes du ${format(new Date(currentDate + 'T00:00:00'), 'dd-MM-yyyy', { locale: fr })}` : 'Voir ventes du jour'}
           </Button>
         </div>
 

@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Shop;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -62,6 +63,11 @@ class ProductController extends Controller
         $payload = $request->validated();
         $payload['shop_id'] = $shop->id;
 
+        if ($request->hasFile('image')) {
+            $payload['image_path'] = $request->file('image')->store('products', 'public');
+        }
+        unset($payload['image']);
+
         $product = $shop->products()->create($payload);
 
         return redirect()->route('shops.products.index', $shop)
@@ -108,7 +114,17 @@ class ProductController extends Controller
         $isAdmin = ($user?->hasRole('admin') ?? false) && ($user?->shops()->whereKey($shop->id)->exists() ?? false);
         abort_unless($isSuper || $isAdmin, 403);
 
-        $product->update($request->validated());
+        $payload = $request->validated();
+
+        if ($request->hasFile('image')) {
+            if ($product->image_path) {
+                Storage::disk('public')->delete($product->image_path);
+            }
+            $payload['image_path'] = $request->file('image')->store('products', 'public');
+        }
+        unset($payload['image']);
+
+        $product->update($payload);
 
         return redirect()->route('shops.products.index', $shop)
             ->with('success', 'Product updated successfully.');

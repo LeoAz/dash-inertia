@@ -8,6 +8,7 @@ export interface Product {
   description: string | null;
   /** Decimal string with 2 precision coming from backend */
   price: string;
+  image_url: string | null;
   created_at: string | null; // ISO string
   updated_at: string | null; // ISO string
 }

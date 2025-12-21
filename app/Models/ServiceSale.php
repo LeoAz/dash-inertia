@@ -11,6 +11,12 @@ class ServiceSale extends Model
     /** @use HasFactory<\Database\Factories\ServiceSaleFactory> */
     use HasFactory;
 
+    protected $casts = [
+        'unit_price' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'quantity' => 'integer',
+    ];
+
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
