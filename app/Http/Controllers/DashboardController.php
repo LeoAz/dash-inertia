@@ -18,31 +18,13 @@ class DashboardController extends Controller
     {
         [$from, $to] = $this->dateRange($request);
 
-        // CA total par jour (line)
-        $revenueByDay = Sale::query()
-            ->select([
-                DB::raw('DATE(sale_date) as date'),
-                DB::raw('SUM(total_amount) as total_amount'),
-            ])
-            ->where('shop_id', $shop->id)
-            ->when($from, fn ($q) => $q->whereDate('sale_date', '>=', $from))
-            ->when($to, fn ($q) => $q->whereDate('sale_date', '<=', $to))
-            ->groupBy(DB::raw('DATE(sale_date)'))
-            ->orderBy(DB::raw('DATE(sale_date)'))
-            ->get()
-            ->map(fn ($row) => [
-                'date' => (string) $row->date,
-                'total_amount' => (float) $row->total_amount,
-            ])
-            ->values();
-
         // CA par produit (bar)
         $productSales = ProductSale::query()
             ->select([
                 'product_sales.product_id',
                 'product_sales.subtotal',
                 'sales.id as sale_id',
-                'sales.total_amount as sale_total',
+                'sales.sale_date',
             ])
             ->join('sales', 'sales.id', '=', 'product_sales.sale_id')
             ->where('sales.shop_id', $shop->id)
@@ -51,9 +33,36 @@ class DashboardController extends Controller
             ->with('product:id,name')
             ->get();
 
-        // Get gross totals per sale to calculate ratios - NO LONGER NEEDED for products/services
-        // but can be kept if needed for other parts of the dashboard.
-        // For now, we removed the usage in byProduct and byService.
+        // CA par service (line)
+        $serviceSales = ServiceSale::query()
+            ->select([
+                'service_sales.service_id',
+                'service_sales.subtotal',
+                'sales.id as sale_id',
+                'sales.sale_date',
+            ])
+            ->join('sales', 'sales.id', '=', 'service_sales.sale_id')
+            ->where('sales.shop_id', $shop->id)
+            ->when($from, fn ($q) => $q->whereDate('sales.sale_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('sales.sale_date', '<=', $to))
+            ->with('service:id,name')
+            ->get();
+
+        // Évolution du CA par jour (basée sur les détails produits/services pour plus de précision)
+        $revenueByDay = $productSales->map(fn ($ps) => [
+            'date' => \Carbon\Carbon::parse($ps->sale_date)->toDateString(),
+            'amount' => (float) $ps->subtotal,
+        ])->concat($serviceSales->map(fn ($ss) => [
+            'date' => \Carbon\Carbon::parse($ss->sale_date)->toDateString(),
+            'amount' => (float) $ss->subtotal,
+        ]))
+            ->groupBy('date')
+            ->map(fn ($group, $date) => [
+                'date' => (string) $date,
+                'total_amount' => (float) $group->sum('amount'),
+            ])
+            ->sortBy('date')
+            ->values();
 
         $byProduct = $productSales->groupBy('product_id')
             ->map(function ($group) {

@@ -255,27 +255,71 @@ class SaleController extends Controller
             return (new \App\Http\Resources\SaleResource($s))->toArray($request);
         });
 
-        // Totals for today/selected date
-        $dailyTotals = Sale::query()
-            ->where('shop_id', $shop->id)
-            ->whereDate('sale_date', $date)
-            ->select([
-                DB::raw('SUM(total_amount) as total_vendu'),
-                // Note: these sums are on the sale table total_amount, not splitting products/services
-                // To get exact product/service totals for the day, we need to join or subquery
-            ])
-            ->first();
+        // Totals for today/selected date considering current search query
+        $statsQuery = Sale::query()
+            ->where('sales.shop_id', $shop->id)
+            ->whereDate('sales.sale_date', $date);
+
+        if ($q !== '') {
+            $statsQuery->where(function ($sub) use ($q) {
+                $sub->whereHas('receipt', function ($r) use ($q) {
+                    $r->where('receipt_number', 'like', "%{$q}%");
+                })
+                    ->orWhere('sales.customer_name', 'like', "%{$q}%")
+                    ->orWhereHas('hairdresser', function ($h) use ($q) {
+                        $h->where('name', 'like', "%{$q}%");
+                    });
+            });
+        }
+
+        $dailyTotals = (clone $statsQuery)->select([
+            DB::raw('SUM(total_amount) as total_vendu'),
+        ])->first();
 
         $totalProduits = DB::table('product_sales')
             ->join('sales', 'sales.id', '=', 'product_sales.sale_id')
             ->where('sales.shop_id', $shop->id)
             ->whereDate('sales.sale_date', $date)
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(function ($sub) use ($q) {
+                    $sub->whereExists(function ($query) use ($q) {
+                        $query->select(DB::raw(1))
+                            ->from('receipts')
+                            ->whereColumn('receipts.sale_id', 'sales.id')
+                            ->where('receipt_number', 'like', "%{$q}%");
+                    })
+                        ->orWhere('sales.customer_name', 'like', "%{$q}%")
+                        ->orWhereExists(function ($query) use ($q) {
+                            $query->select(DB::raw(1))
+                                ->from('hairdressers')
+                                ->whereColumn('hairdressers.id', 'sales.hairdresser_id')
+                                ->where('name', 'like', "%{$q}%");
+                        });
+                });
+            })
             ->sum('product_sales.subtotal');
 
         $totalServices = DB::table('service_sales')
             ->join('sales', 'sales.id', '=', 'service_sales.sale_id')
             ->where('sales.shop_id', $shop->id)
             ->whereDate('sales.sale_date', $date)
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(function ($sub) use ($q) {
+                    $sub->whereExists(function ($query) use ($q) {
+                        $query->select(DB::raw(1))
+                            ->from('receipts')
+                            ->whereColumn('receipts.sale_id', 'sales.id')
+                            ->where('receipt_number', 'like', "%{$q}%");
+                    })
+                        ->orWhere('sales.customer_name', 'like', "%{$q}%")
+                        ->orWhereExists(function ($query) use ($q) {
+                            $query->select(DB::raw(1))
+                                ->from('hairdressers')
+                                ->whereColumn('hairdressers.id', 'sales.hairdresser_id')
+                                ->where('name', 'like', "%{$q}%");
+                        });
+                });
+            })
             ->sum('service_sales.subtotal');
 
         return Inertia::render('sales/index', [

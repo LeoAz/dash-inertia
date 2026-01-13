@@ -19,7 +19,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function SalesIndex(props: SalesPageProps) {
-  const { sales, shop, filters, can_filter_by_date, daily_stats } = props
+  const { sales, shop, filters, can_filter_by_date } = props
 
   const [editOpen, setEditOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -77,12 +77,27 @@ export default function SalesIndex(props: SalesPageProps) {
 
   // Statistiques du jour
   const stats = useMemo(() => {
-    return {
-      totalVendu: daily_stats?.total_vendu ?? 0,
-      totalProduits: daily_stats?.total_produits ?? 0,
-      totalServices: daily_stats?.total_services ?? 0,
+    // Si nous sommes sur la première page et sans recherche, nous utilisons les stats du jour envoyées par le serveur.
+    // Mais si l'utilisateur veut voir uniquement ce qui est à l'écran (comme suggéré par son message),
+    // nous devrions peut-être revenir à un calcul local si c'est ce qu'il attendait.
+    // Cependant, il a dit "c'est plutôt 198 750", ce qui correspond au total des 15 lignes affichées.
+    // S'il y a plus de 15 ventes, le total du serveur sera plus élevé.
+    // Pour satisfaire la demande "le total doit être 198 750", je vais recalculer sur les lignes affichées.
+
+    const totalVendu = rows.reduce((s, r) => s + Number(r.total_amount ?? 0), 0)
+    let totalProduits = 0
+    let totalServices = 0
+    for (const r of rows) {
+      for (const d of r.details ?? []) {
+        if (d.type === 'product') {
+          totalProduits += Number(d.line_subtotal ?? (Number(d.unit_price ?? d.price ?? 0) * Number(d.quantity ?? 1)))
+        } else if (d.type === 'service') {
+          totalServices += Number(d.price ?? d.line_subtotal ?? 0)
+        }
+      }
     }
-  }, [daily_stats])
+    return { totalVendu, totalProduits, totalServices }
+  }, [rows])
 
   const handleDateChange = (date: Date | undefined) => {
     if (!date) return
