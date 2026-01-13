@@ -180,20 +180,20 @@ export default function SalesIndex(props: SalesPageProps) {
         {/* Stats cards */}
         <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
-            <CardHeader className="py-2"><CardTitle className="text-sm">Nombre de ventes</CardTitle></CardHeader>
-            <CardContent className="pb-3 text-2xl font-semibold">{stats.total_ventes}</CardContent>
+            <CardHeader className="py-1"><CardTitle className="text-sm">Nombre de ventes</CardTitle></CardHeader>
+            <CardContent className="pb-2 text-3xl font-semibold">{stats.total_ventes}</CardContent>
           </Card>
           <Card>
-            <CardHeader className="py-2"><CardTitle className="text-sm">Montant total vendu</CardTitle></CardHeader>
-            <CardContent className="pb-3 text-2xl font-semibold">{fmt(stats.total_vendu)}</CardContent>
+            <CardHeader className="py-1"><CardTitle className="text-sm">Montant total vendu</CardTitle></CardHeader>
+            <CardContent className="pb-2 text-3xl font-semibold">{fmt(stats.total_vendu)}</CardContent>
           </Card>
           <Card>
-            <CardHeader className="py-2"><CardTitle className="text-sm">Montant total produits</CardTitle></CardHeader>
-            <CardContent className="pb-3 text-2xl font-semibold">{fmt(stats.total_produits)}</CardContent>
+            <CardHeader className="py-1"><CardTitle className="text-sm">Montant total produits</CardTitle></CardHeader>
+            <CardContent className="pb-2 text-3xl font-semibold">{fmt(stats.total_produits)}</CardContent>
           </Card>
           <Card>
-            <CardHeader className="py-2"><CardTitle className="text-sm">Montant total services</CardTitle></CardHeader>
-            <CardContent className="pb-3 text-2xl font-semibold">{fmt(stats.total_services)}</CardContent>
+            <CardHeader className="py-1"><CardTitle className="text-sm">Montant total services</CardTitle></CardHeader>
+            <CardContent className="pb-2 text-3xl font-semibold">{fmt(stats.total_services)}</CardContent>
           </Card>
         </div>
       </SaleLayout>
