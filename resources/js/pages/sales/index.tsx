@@ -121,7 +121,7 @@ export default function SalesIndex(props: SalesPageProps) {
       date: iso,
     }, {
       preserveState: true,
-      only: ['sales', 'filters'],
+      only: ['sales', 'filters', 'daily_stats'],
     })
   }
 
@@ -402,7 +402,7 @@ function SaleFormLegacy({ mode, initial, onDone, products: productOptions, servi
           setAddPromotion(false)
           setSelectedPromotionId('')
           setHairdresserId('')
-          router.reload({ only: ['sales'] })
+          router.reload({ only: ['sales', 'daily_stats'] })
         },
         onError: (errs) => {
           const values = Object.values(errs ?? {})
@@ -427,7 +427,7 @@ function SaleFormLegacy({ mode, initial, onDone, products: productOptions, servi
         onSuccess: () => {
           toast.success('Vente mise à jour avec succès.')
           onDone?.()
-          router.reload({ only: ['sales'] })
+          router.reload({ only: ['sales', 'daily_stats'] })
         },
         onError: (errs) => {
           const values = Object.values(errs ?? {})
