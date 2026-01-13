@@ -48,13 +48,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Reports routes
             Route::prefix('reports')->as('reports.')->group(function () {
                 Route::get('products', [ReportController::class, 'productSales'])->name('products');
-                Route::get('products/export', [ReportController::class, 'exportProductSales'])->name('products.export');
                 Route::get('services', [ReportController::class, 'serviceSales'])->name('services');
-                Route::get('services/export', [ReportController::class, 'exportServiceSales'])->name('services.export');
                 Route::get('clients', [ReportController::class, 'clients'])->name('clients');
-                Route::get('clients/export', [ReportController::class, 'exportClients'])->name('clients.export');
                 Route::get('hairdressers', [ReportController::class, 'hairdressers'])->name('hairdressers');
-                Route::get('hairdressers/export', [ReportController::class, 'exportHairdressers'])->name('hairdressers.export');
             });
         });
 

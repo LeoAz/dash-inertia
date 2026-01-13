@@ -2,10 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\ClientsExport;
-use App\Exports\HairdressersExport;
-use App\Exports\ProductSalesExport;
-use App\Exports\ServiceSalesExport;
 use App\Models\ProductSale;
 use App\Models\Sale;
 use App\Models\ServiceSale;
@@ -14,8 +10,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
-use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ReportController extends Controller
 {
@@ -29,16 +23,6 @@ class ReportController extends Controller
             'rows' => $data['rows'],
             'totals' => $data['totals'],
         ]);
-    }
-
-    public function exportProductSales(Shop $shop, Request $request): BinaryFileResponse
-    {
-        $data = $this->getProductSalesData($shop, $request);
-
-        return Excel::download(
-            new ProductSalesExport($data['rows'], $data['totals']),
-            "rapport-ventes-produits-{$shop->id}.xlsx"
-        );
     }
 
     protected function getProductSalesData(Shop $shop, Request $request): array
@@ -92,16 +76,6 @@ class ReportController extends Controller
         ]);
     }
 
-    public function exportServiceSales(Shop $shop, Request $request): BinaryFileResponse
-    {
-        $data = $this->getServiceSalesData($shop, $request);
-
-        return Excel::download(
-            new ServiceSalesExport($data['rows'], $data['totals']),
-            "rapport-ventes-services-{$shop->id}.xlsx"
-        );
-    }
-
     protected function getServiceSalesData(Shop $shop, Request $request): array
     {
         [$from, $to] = $this->dateRange($request);
@@ -153,16 +127,6 @@ class ReportController extends Controller
         ]);
     }
 
-    public function exportClients(Shop $shop, Request $request): BinaryFileResponse
-    {
-        $data = $this->getClientsData($shop, $request);
-
-        return Excel::download(
-            new ClientsExport($data['rows'], $data['totals']),
-            "rapport-clients-{$shop->id}.xlsx"
-        );
-    }
-
     protected function getClientsData(Shop $shop, Request $request): array
     {
         [$from, $to] = $this->dateRange($request);
@@ -207,16 +171,6 @@ class ReportController extends Controller
             'rows' => $data['rows'],
             'totals' => $data['totals'],
         ]);
-    }
-
-    public function exportHairdressers(Shop $shop, Request $request): BinaryFileResponse
-    {
-        $data = $this->getHairdressersData($shop, $request);
-
-        return Excel::download(
-            new HairdressersExport($data['rows'], $data['totals']),
-            "rapport-coiffeurs-{$shop->id}.xlsx"
-        );
     }
 
     protected function getHairdressersData(Shop $shop, Request $request): array

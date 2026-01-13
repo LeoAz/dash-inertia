@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import DateRangePicker42, { JsDateRange } from '@/components/comp-42'
 import reportsRoutes from '@/routes/shops/reports'
-import { Printer, FileSpreadsheet } from 'lucide-react'
+import { Printer } from 'lucide-react'
 
 type Filters = { date_from?: string | null; date_to?: string | null }
 
@@ -44,13 +44,6 @@ export default function ServiceSalesReport({ shop, filters, rows, totals }: Prop
   const clear = () => {
     const url = reportsRoutes.services.url({ shop: Number(shop.id) })
     router.visit(url, { preserveScroll: true, preserveState: true })
-  }
-
-  const exportExcel = () => {
-    const query: Record<string, string> = {}
-    if (range?.from) query.date_from = range.from.toISOString().slice(0, 10)
-    if (range?.to) query.date_to = range.to.toISOString().slice(0, 10)
-    window.location.href = reportsRoutes.services.export.url({ shop: Number(shop.id) }, { query })
   }
 
   const printReport = () => {
@@ -169,10 +162,6 @@ export default function ServiceSalesReport({ shop, filters, rows, totals }: Prop
           <Button size="sm" variant="outline" className="gap-2" onClick={printReport}>
             <Printer className="h-4 w-4" />
             Imprimer
-          </Button>
-          <Button size="sm" variant="outline" className="gap-2 border-green-600 text-green-600 hover:bg-green-50" onClick={exportExcel}>
-            <FileSpreadsheet className="h-4 w-4" />
-            Excel
           </Button>
         </div>
       </div>
