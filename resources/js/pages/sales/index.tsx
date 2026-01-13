@@ -33,6 +33,8 @@ export interface SalesPageProps {
     total_produits: number
     total_services: number
     total_ventes: number
+    total_caisse: number
+    total_orange_money: number
   }
   products: { id: number; name: string; price: number }[]
   services: { id: number; name: string; price: number }[]
@@ -110,7 +112,7 @@ export default function SalesIndex(props: SalesPageProps) {
   }
 
   // Statistiques du jour
-  const stats = props.daily_stats || { total_vendu: 0, total_produits: 0, total_services: 0, total_ventes: 0 }
+  const stats = props.daily_stats || { total_vendu: 0, total_produits: 0, total_services: 0, total_ventes: 0, total_caisse: 0, total_orange_money: 0 }
 
   const handleDateChange = (date: Date | undefined) => {
     if (!date) return
@@ -185,7 +187,13 @@ export default function SalesIndex(props: SalesPageProps) {
           </Card>
           <Card>
             <CardHeader className="py-1"><CardTitle className="text-sm">Montant total vendu</CardTitle></CardHeader>
-            <CardContent className="pb-2 text-3xl font-semibold">{fmt(stats.total_vendu)}</CardContent>
+            <CardContent className="pb-2">
+              <div className="text-3xl font-semibold">{fmt(stats.total_vendu)}</div>
+              <div className="mt-1 flex flex-col text-sm text-muted-foreground">
+                <span>Caisse : {fmt(stats.total_caisse)}</span>
+                <span>Orange Money : {fmt(stats.total_orange_money)}</span>
+              </div>
+            </CardContent>
           </Card>
           <Card>
             <CardHeader className="py-1"><CardTitle className="text-sm">Montant total produits</CardTitle></CardHeader>

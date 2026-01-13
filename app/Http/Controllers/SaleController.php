@@ -269,6 +269,8 @@ class SaleController extends Controller
         $dailyTotals = (clone $statsQuery)->select([
             DB::raw('SUM(total_amount) as total_vendu'),
             DB::raw('COUNT(*) as total_ventes'),
+            DB::raw("SUM(CASE WHEN payment_method = 'caisse' THEN total_amount ELSE 0 END) as total_caisse"),
+            DB::raw("SUM(CASE WHEN payment_method = 'orange_money' THEN total_amount ELSE 0 END) as total_orange_money"),
         ])->first();
 
         $totalProduits = DB::table('product_sales')
@@ -322,6 +324,8 @@ class SaleController extends Controller
             'daily_stats' => [
                 'total_vendu' => (float) ($dailyTotals->total_vendu ?? 0),
                 'total_ventes' => (int) ($dailyTotals->total_ventes ?? 0),
+                'total_caisse' => (float) ($dailyTotals->total_caisse ?? 0),
+                'total_orange_money' => (float) ($dailyTotals->total_orange_money ?? 0),
                 'total_produits' => (float) ($totalProduits ?? 0),
                 'total_services' => (float) ($totalServices ?? 0),
             ],
