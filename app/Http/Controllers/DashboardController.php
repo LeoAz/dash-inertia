@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
 use App\Models\ProductSale;
 use App\Models\Sale;
 use App\Models\Service;
@@ -38,29 +37,33 @@ class DashboardController extends Controller
             ->values();
 
         // CA par produit (bar)
-        $byProduct = ProductSale::query()
+        $productSales = ProductSale::query()
             ->select([
                 'product_sales.product_id',
-                DB::raw('SUM(product_sales.subtotal) as total_amount'),
+                'product_sales.subtotal',
+                'sales.id as sale_id',
+                'sales.total_amount as sale_total',
             ])
             ->join('sales', 'sales.id', '=', 'product_sales.sale_id')
             ->where('sales.shop_id', $shop->id)
             ->when($from, fn ($q) => $q->whereDate('sales.sale_date', '>=', $from))
             ->when($to, fn ($q) => $q->whereDate('sales.sale_date', '<=', $to))
-            ->groupBy('product_sales.product_id')
             ->with('product:id,name')
-            ->orderByDesc(DB::raw('SUM(product_sales.subtotal)'))
-            ->limit(20)
-            ->get()
-            ->map(function (ProductSale $ps) {
-                /** @var Product|null $product */
-                $product = $ps->product ?? null;
+            ->get();
 
+        // Get gross totals per sale to calculate ratios - NO LONGER NEEDED for products/services
+        // but can be kept if needed for other parts of the dashboard.
+        // For now, we removed the usage in byProduct and byService.
+
+        $byProduct = $productSales->groupBy('product_id')
+            ->map(function ($group) {
                 return [
-                    'label' => (string) ($product->name ?? ''),
-                    'amount' => (float) $ps->total_amount,
+                    'label' => (string) ($group->first()->product->name ?? ''),
+                    'amount' => (float) $group->sum('subtotal'),
                 ];
             })
+            ->sortByDesc('amount')
+            ->take(20)
             ->values();
 
         // CA par client (bar)
@@ -83,29 +86,29 @@ class DashboardController extends Controller
             ->values();
 
         // CA par service (line)
-        $byService = ServiceSale::query()
+        $serviceSales = ServiceSale::query()
             ->select([
                 'service_sales.service_id',
-                DB::raw('SUM(service_sales.subtotal) as total_amount'),
+                'service_sales.subtotal',
+                'sales.id as sale_id',
+                'sales.total_amount as sale_total',
             ])
             ->join('sales', 'sales.id', '=', 'service_sales.sale_id')
             ->where('sales.shop_id', $shop->id)
             ->when($from, fn ($q) => $q->whereDate('sales.sale_date', '>=', $from))
             ->when($to, fn ($q) => $q->whereDate('sales.sale_date', '<=', $to))
-            ->groupBy('service_sales.service_id')
             ->with('service:id,name')
-            ->orderByDesc(DB::raw('SUM(service_sales.subtotal)'))
-            ->limit(20)
-            ->get()
-            ->map(function (ServiceSale $ss) {
-                /** @var Service|null $service */
-                $service = $ss->service ?? null;
+            ->get();
 
+        $byService = $serviceSales->groupBy('service_id')
+            ->map(function ($group) {
                 return [
-                    'label' => (string) ($service->name ?? ''),
-                    'amount' => (float) $ss->total_amount,
+                    'label' => (string) ($group->first()->service->name ?? ''),
+                    'amount' => (float) $group->sum('subtotal'),
                 ];
             })
+            ->sortByDesc('amount')
+            ->take(20)
             ->values();
 
         // CA par coiffeur (bar)
@@ -129,33 +132,8 @@ class DashboardController extends Controller
             ->values();
 
         // Highlights (top 1 per category within the period)
-        $topProductRow = ProductSale::query()
-            ->select([
-                'product_sales.product_id',
-                DB::raw('SUM(product_sales.subtotal) as total_amount'),
-            ])
-            ->join('sales', 'sales.id', '=', 'product_sales.sale_id')
-            ->where('sales.shop_id', $shop->id)
-            ->when($from, fn ($q) => $q->whereDate('sales.sale_date', '>=', $from))
-            ->when($to, fn ($q) => $q->whereDate('sales.sale_date', '<=', $to))
-            ->groupBy('product_sales.product_id')
-            ->with('product:id,name')
-            ->orderByDesc(DB::raw('SUM(product_sales.subtotal)'))
-            ->first();
-
-        $topServiceRow = ServiceSale::query()
-            ->select([
-                'service_sales.service_id',
-                DB::raw('SUM(service_sales.subtotal) as total_amount'),
-            ])
-            ->join('sales', 'sales.id', '=', 'service_sales.sale_id')
-            ->where('sales.shop_id', $shop->id)
-            ->when($from, fn ($q) => $q->whereDate('sales.sale_date', '>=', $from))
-            ->when($to, fn ($q) => $q->whereDate('sales.sale_date', '<=', $to))
-            ->groupBy('service_sales.service_id')
-            ->with('service:id,name')
-            ->orderByDesc(DB::raw('SUM(service_sales.subtotal)'))
-            ->first();
+        $topProductRow = $byProduct->first();
+        $topServiceRow = $byService->first();
 
         $bestClientRow = Sale::query()
             ->select([
@@ -184,12 +162,12 @@ class DashboardController extends Controller
 
         $highlights = [
             'top_product' => $topProductRow ? [
-                'label' => (string) optional($topProductRow->product)->name,
-                'amount' => (float) $topProductRow->total_amount,
+                'label' => (string) $topProductRow['label'],
+                'amount' => (float) $topProductRow['amount'],
             ] : null,
             'top_service' => $topServiceRow ? [
-                'label' => (string) optional($topServiceRow->service)->name,
-                'amount' => (float) $topServiceRow->total_amount,
+                'label' => (string) $topServiceRow['label'],
+                'amount' => (float) $topServiceRow['amount'],
             ] : null,
             'best_client' => $bestClientRow ? [
                 'label' => (string) $bestClientRow->customer_name,

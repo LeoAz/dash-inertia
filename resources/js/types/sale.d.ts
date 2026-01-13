@@ -56,6 +56,11 @@ export interface SalesPageProps extends PageProps {
   }
   shop: { id: number | string; name?: string }
   can_filter_by_date?: boolean
+  daily_stats?: {
+    total_vendu: number
+    total_produits: number
+    total_services: number
+  }
   products: Array<{ id: number; name: string; price: number }>
   services: Array<{ id: number; name: string; price: number }>
   hairdressers: Array<{ id: number; name: string }>

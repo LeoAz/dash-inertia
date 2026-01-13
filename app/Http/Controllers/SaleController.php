@@ -255,8 +255,36 @@ class SaleController extends Controller
             return (new \App\Http\Resources\SaleResource($s))->toArray($request);
         });
 
+        // Totals for today/selected date
+        $dailyTotals = Sale::query()
+            ->where('shop_id', $shop->id)
+            ->whereDate('sale_date', $date)
+            ->select([
+                DB::raw('SUM(total_amount) as total_vendu'),
+                // Note: these sums are on the sale table total_amount, not splitting products/services
+                // To get exact product/service totals for the day, we need to join or subquery
+            ])
+            ->first();
+
+        $totalProduits = DB::table('product_sales')
+            ->join('sales', 'sales.id', '=', 'product_sales.sale_id')
+            ->where('sales.shop_id', $shop->id)
+            ->whereDate('sales.sale_date', $date)
+            ->sum('product_sales.subtotal');
+
+        $totalServices = DB::table('service_sales')
+            ->join('sales', 'sales.id', '=', 'service_sales.sale_id')
+            ->where('sales.shop_id', $shop->id)
+            ->whereDate('sales.sale_date', $date)
+            ->sum('service_sales.subtotal');
+
         return Inertia::render('sales/index', [
             'sales' => $sales,
+            'daily_stats' => [
+                'total_vendu' => (float) ($dailyTotals->total_vendu ?? 0),
+                'total_produits' => (float) ($totalProduits ?? 0),
+                'total_services' => (float) ($totalServices ?? 0),
+            ],
             'filters' => [
                 'q' => $q,
                 'sort' => $sort,

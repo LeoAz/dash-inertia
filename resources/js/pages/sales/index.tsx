@@ -19,7 +19,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function SalesIndex(props: SalesPageProps) {
-  const { sales, shop, filters, can_filter_by_date } = props
+  const { sales, shop, filters, can_filter_by_date, daily_stats } = props
 
   const [editOpen, setEditOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
@@ -75,22 +75,14 @@ export default function SalesIndex(props: SalesPageProps) {
     }
   }
 
-  // Statistiques du jour (sur la liste déjà filtrée "du jour")
+  // Statistiques du jour
   const stats = useMemo(() => {
-    const totalVendu = rows.reduce((s, r) => s + Number(r.total_amount ?? 0), 0)
-    let totalProduits = 0
-    let totalServices = 0
-    for (const r of rows) {
-      for (const d of r.details ?? []) {
-        if (d.type === 'product') {
-          totalProduits += Number(d.line_subtotal ?? (Number(d.unit_price ?? d.price ?? 0) * Number(d.quantity ?? 1)))
-        } else if (d.type === 'service') {
-          totalServices += Number(d.price ?? d.line_subtotal ?? 0)
-        }
-      }
+    return {
+      totalVendu: daily_stats?.total_vendu ?? 0,
+      totalProduits: daily_stats?.total_produits ?? 0,
+      totalServices: daily_stats?.total_services ?? 0,
     }
-    return { totalVendu, totalProduits, totalServices }
-  }, [rows])
+  }, [daily_stats])
 
   const handleDateChange = (date: Date | undefined) => {
     if (!date) return
