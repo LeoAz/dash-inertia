@@ -13,8 +13,9 @@ import { Calendar } from '@/components/ui/calendar'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import salesRoutes from '@/routes/shops/sales/index'
 import { fr } from 'date-fns/locale'
+import { format } from 'date-fns'
 import { toast } from 'sonner'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function SalesIndex(props: SalesPageProps) {

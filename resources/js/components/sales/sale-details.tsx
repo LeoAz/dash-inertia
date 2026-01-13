@@ -95,7 +95,7 @@ export default function SaleDetails({ open, onOpenChange, sale, shop, autoPrint 
                 iframe.contentWindow?.print()
             } catch (e) {
                 // journaliser l'erreur pour diagnostic sans interrompre le flux
-                // eslint-disable-next-line no-console
+                 
                 console.error(e)
             } finally {
                 // Nettoyer après un court délai
