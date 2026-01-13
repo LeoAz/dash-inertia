@@ -20,18 +20,12 @@ import {
     ColumnFiltersState,
     getCoreRowModel,
     getFilteredRowModel,
-    getPaginationRowModel,
     getSortedRowModel,
-    PaginationState,
     SortingState,
     useReactTable,
     flexRender,
 } from '@tanstack/react-table';
 import {
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    ChevronFirstIcon,
-    ChevronLastIcon,
     ListFilterIcon,
     EditIcon,
     TrashIcon, PrinterIcon
@@ -179,7 +173,6 @@ function SalesDataTable({ rows, onEdit, onView }: { rows: SaleRow[]; onEdit?: (r
     const canDelete = roles.includes('Super admin') || roles.includes('admin');
     const [globalFilter, setGlobalFilter] = useState('');
     const [sorting, setSorting] = useState<SortingState>([{ id: 'sale_date', desc: true }]);
-    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const searchRef = useRef<HTMLInputElement>(null);
     const { sale: toDelete, confirmDelete, cancel, proceed } = useConfirmDelete();
@@ -368,10 +361,8 @@ function SalesDataTable({ rows, onEdit, onView }: { rows: SaleRow[]; onEdit?: (r
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        state: { sorting, globalFilter, pagination, columnFilters },
+        state: { sorting, globalFilter, columnFilters },
         onSortingChange: setSorting,
-        onPaginationChange: setPagination,
         onGlobalFilterChange: setGlobalFilter,
         onColumnFiltersChange: setColumnFilters,
         globalFilterFn: (row, _columnId, filter) => {
@@ -446,27 +437,6 @@ function SalesDataTable({ rows, onEdit, onView }: { rows: SaleRow[]; onEdit?: (r
                         </TableBody>
                     </Table>
                 </div>
-
-                {/* Pagination */}
-                <div className="flex items-center justify-between gap-3">
-                    <div className="text-xs text-muted-foreground">
-                        Page {table.getState().pagination.pageIndex + 1} sur {table.getPageCount() || 1}
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <IconButton onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()} aria-label="Première page">
-                            <ChevronFirstIcon className="h-4 w-4" />
-                        </IconButton>
-                        <IconButton onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()} aria-label="Page précédente">
-                            <ChevronLeftIcon className="h-4 w-4" />
-                        </IconButton>
-                        <IconButton onClick={() => table.nextPage()} disabled={!table.getCanNextPage()} aria-label="Page suivante">
-                            <ChevronRightIcon className="h-4 w-4" />
-                        </IconButton>
-                        <IconButton onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()} aria-label="Dernière page">
-                            <ChevronLastIcon className="h-4 w-4" />
-                        </IconButton>
-                    </div>
-                </div>
             </div>
 
             {/* Modal de confirmation de suppression */}
@@ -488,13 +458,5 @@ function SalesDataTable({ rows, onEdit, onView }: { rows: SaleRow[]; onEdit?: (r
             </AlertDialog>
 
         </>
-    );
-}
-
-function IconButton({ children, disabled, onClick, 'aria-label': ariaLabel }: PropsWithChildren<{ disabled?: boolean; onClick?: () => void; 'aria-label'?: string }>) {
-    return (
-        <Button variant="outline" size="sm" onClick={onClick} disabled={disabled} aria-label={ariaLabel} className="h-8 w-8 p-0">
-            {children}
-        </Button>
     );
 }

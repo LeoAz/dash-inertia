@@ -18,6 +18,38 @@ import { toast } from 'sonner'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
+export interface SalesPageProps {
+  sales: any[] | { data: any[] }
+  shop: { id: number | string; name: string }
+  filters?: {
+    q?: string
+    sort?: string
+    dir?: string
+    date?: string
+  }
+  can_filter_by_date?: boolean
+  daily_stats?: {
+    total_vendu: number
+    total_produits: number
+    total_services: number
+  }
+  products: { id: number; name: string; price: number }[]
+  services: { id: number; name: string; price: number }[]
+  promotions: {
+    id: number
+    name: string
+    percentage: number
+    amount: number
+    applicable_to_products: boolean
+    applicable_to_services: boolean
+    active: boolean
+    starts_at?: string
+    ends_at?: string
+    days_of_week?: string
+  }[]
+  hairdressers: { id: number; name: string }[]
+}
+
 export default function SalesIndex(props: SalesPageProps) {
   const { sales, shop, filters, can_filter_by_date } = props
 
@@ -42,9 +74,9 @@ export default function SalesIndex(props: SalesPageProps) {
   }
   const [editInitial, setEditInitial] = useState<SaleShowPayload | null>(null)
 
-  // Map API pagination rows to SaleLayout rows
+  // Map API rows to SaleLayout rows
   const rows: SaleRow[] = useMemo(() => {
-    return (sales?.data ?? []).map((s) => ({
+    return (Array.isArray(sales) ? sales : []).map((s) => ({
       id: s.id,
       receipt_number: s.receipt_number ?? undefined,
       customer_name: s.customer_name ?? undefined,
@@ -76,28 +108,7 @@ export default function SalesIndex(props: SalesPageProps) {
   }
 
   // Statistiques du jour
-  const stats = useMemo(() => {
-    // Si nous sommes sur la première page et sans recherche, nous utilisons les stats du jour envoyées par le serveur.
-    // Mais si l'utilisateur veut voir uniquement ce qui est à l'écran (comme suggéré par son message),
-    // nous devrions peut-être revenir à un calcul local si c'est ce qu'il attendait.
-    // Cependant, il a dit "c'est plutôt 198 750", ce qui correspond au total des 15 lignes affichées.
-    // S'il y a plus de 15 ventes, le total du serveur sera plus élevé.
-    // Pour satisfaire la demande "le total doit être 198 750", je vais recalculer sur les lignes affichées.
-
-    const totalVendu = rows.reduce((s, r) => s + Number(r.total_amount ?? 0), 0)
-    let totalProduits = 0
-    let totalServices = 0
-    for (const r of rows) {
-      for (const d of r.details ?? []) {
-        if (d.type === 'product') {
-          totalProduits += Number(d.line_subtotal ?? (Number(d.unit_price ?? d.price ?? 0) * Number(d.quantity ?? 1)))
-        } else if (d.type === 'service') {
-          totalServices += Number(d.price ?? d.line_subtotal ?? 0)
-        }
-      }
-    }
-    return { totalVendu, totalProduits, totalServices }
-  }, [rows])
+  const stats = props.daily_stats || { total_vendu: 0, total_produits: 0, total_services: 0 }
 
   const handleDateChange = (date: Date | undefined) => {
     if (!date) return
@@ -168,15 +179,15 @@ export default function SalesIndex(props: SalesPageProps) {
         <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Card>
             <CardHeader className="py-2"><CardTitle className="text-sm">Montant total vendu</CardTitle></CardHeader>
-            <CardContent className="pb-3 text-2xl font-semibold">{fmt(stats.totalVendu)}</CardContent>
+            <CardContent className="pb-3 text-2xl font-semibold">{fmt(stats.total_vendu)}</CardContent>
           </Card>
           <Card>
             <CardHeader className="py-2"><CardTitle className="text-sm">Montant total produits</CardTitle></CardHeader>
-            <CardContent className="pb-3 text-2xl font-semibold">{fmt(stats.totalProduits)}</CardContent>
+            <CardContent className="pb-3 text-2xl font-semibold">{fmt(stats.total_produits)}</CardContent>
           </Card>
           <Card>
             <CardHeader className="py-2"><CardTitle className="text-sm">Montant total services</CardTitle></CardHeader>
-            <CardContent className="pb-3 text-2xl font-semibold">{fmt(stats.totalServices)}</CardContent>
+            <CardContent className="pb-3 text-2xl font-semibold">{fmt(stats.total_services)}</CardContent>
           </Card>
         </div>
       </SaleLayout>

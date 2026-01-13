@@ -196,9 +196,6 @@ class SaleController extends Controller
     public function index(Shop $shop, Request $request): Response
     {
         $q = (string) $request->string('q')->toString();
-        $perPage = (int) ($request->integer('perPage') ?: 15);
-        $perPage = $perPage > 0 && $perPage <= 100 ? $perPage : 15;
-
         $sort = (string) $request->string('sort')->toString();
         $dir = strtolower((string) $request->string('dir')->toString());
         $dir = in_array($dir, ['asc', 'desc'], true) ? $dir : 'desc';
@@ -248,10 +245,7 @@ class SaleController extends Controller
             $query->orderBy("sales.$sort", $dir)->orderBy('sales.id', 'desc');
         }
 
-        /** @var LengthAwarePaginator $paginator */
-        $paginator = $query->paginate($perPage)->appends($request->query());
-
-        $sales = $paginator->through(function (Sale $s) use ($request) {
+        $sales = $query->get()->map(function (Sale $s) use ($request) {
             return (new \App\Http\Resources\SaleResource($s))->toArray($request);
         });
 
@@ -333,7 +327,6 @@ class SaleController extends Controller
                 'q' => $q,
                 'sort' => $sort,
                 'dir' => $dir,
-                'perPage' => $perPage,
                 'date' => $date,
             ],
             'shop' => [
