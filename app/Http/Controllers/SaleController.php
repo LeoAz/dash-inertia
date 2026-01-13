@@ -268,6 +268,7 @@ class SaleController extends Controller
 
         $dailyTotals = (clone $statsQuery)->select([
             DB::raw('SUM(total_amount) as total_vendu'),
+            DB::raw('COUNT(*) as total_ventes'),
         ])->first();
 
         $totalProduits = DB::table('product_sales')
@@ -320,6 +321,7 @@ class SaleController extends Controller
             'sales' => $sales,
             'daily_stats' => [
                 'total_vendu' => (float) ($dailyTotals->total_vendu ?? 0),
+                'total_ventes' => (int) ($dailyTotals->total_ventes ?? 0),
                 'total_produits' => (float) ($totalProduits ?? 0),
                 'total_services' => (float) ($totalServices ?? 0),
             ],

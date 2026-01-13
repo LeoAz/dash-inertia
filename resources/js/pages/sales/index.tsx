@@ -32,6 +32,7 @@ export interface SalesPageProps {
     total_vendu: number
     total_produits: number
     total_services: number
+    total_ventes: number
   }
   products: { id: number; name: string; price: number }[]
   services: { id: number; name: string; price: number }[]
@@ -83,6 +84,7 @@ export default function SalesIndex(props: SalesPageProps) {
       hairdresser_name: s.hairdresser_name ?? undefined,
       total_amount: s.total_amount ?? 0,
       sale_date: s.sale_date,
+      payment_method: s.payment_method ?? undefined,
       promotion_applied: Boolean(s.promotion_applied),
       promotion_label: s.promotion_label ?? undefined,
       details: s.details ?? [],
@@ -108,7 +110,7 @@ export default function SalesIndex(props: SalesPageProps) {
   }
 
   // Statistiques du jour
-  const stats = props.daily_stats || { total_vendu: 0, total_produits: 0, total_services: 0 }
+  const stats = props.daily_stats || { total_vendu: 0, total_produits: 0, total_services: 0, total_ventes: 0 }
 
   const handleDateChange = (date: Date | undefined) => {
     if (!date) return
@@ -176,7 +178,11 @@ export default function SalesIndex(props: SalesPageProps) {
         </div>
 
         {/* Stats cards */}
-        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="py-2"><CardTitle className="text-sm">Nombre de ventes</CardTitle></CardHeader>
+            <CardContent className="pb-3 text-2xl font-semibold">{stats.total_ventes}</CardContent>
+          </Card>
           <Card>
             <CardHeader className="py-2"><CardTitle className="text-sm">Montant total vendu</CardTitle></CardHeader>
             <CardContent className="pb-3 text-2xl font-semibold">{fmt(stats.total_vendu)}</CardContent>

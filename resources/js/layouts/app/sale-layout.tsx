@@ -370,7 +370,7 @@ function SalesDataTable({ rows, onEdit, onView }: { rows: SaleRow[]; onEdit?: (r
             if (!v) return true;
             const r = row.original;
             const details = (r.details ?? []).map((it) => `${it.name}${it.quantity ? ` x${it.quantity}` : ''}`).join(' ');
-            const blob = `${r.receipt_number ?? ''} ${r.customer_name ?? ''} ${r.hairdresser_name ?? ''} ${r.promotion_label ?? ''} ${details}`.toLowerCase();
+            const blob = `${r.receipt_number ?? ''} ${r.customer_name ?? ''} ${r.hairdresser_name ?? ''} ${r.promotion_label ?? ''} ${r.payment_method ?? ''} ${details}`.toLowerCase();
             return blob.includes(v);
         },
     });
