@@ -9,10 +9,8 @@ import { fr } from 'date-fns/locale'
 // Fonction de formatage des devises
 function formatCurrency(v: number): string {
     return new Intl.NumberFormat('fr-FR', {
-        style: 'currency',
-        currency: 'XOF',
         minimumFractionDigits: 0,
-    }).format(v)
+    }).format(v).replace(/\u00A0/g, ' ') + ' F CFA'
 }
 
 interface SaleDetailsProps {
@@ -95,7 +93,7 @@ export default function SaleDetails({ open, onOpenChange, sale, shop, autoPrint 
                 iframe.contentWindow?.print()
             } catch (e) {
                 // journaliser l'erreur pour diagnostic sans interrompre le flux
-                 
+
                 console.error(e)
             } finally {
                 // Nettoyer après un court délai

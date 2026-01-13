@@ -308,7 +308,7 @@ function SalesDataTable({ rows, onEdit, onView }: { rows: SaleRow[]; onEdit?: (r
             header: 'Total',
             accessorKey: 'total_amount',
             size: 110,
-            cell: ({ row }) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(Number(row.original.total_amount ?? 0))
+            cell: ({ row }) => new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(Number(row.original.total_amount ?? 0)).replace(/\u00A0/g, ' ') + ' F CFA'
         },
         {
             header: 'Actions',

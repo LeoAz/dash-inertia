@@ -21,13 +21,10 @@ import {
 // Simple money formatter consistent with reports pages
 function formatMoney(v: number): string {
   return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'XOF',
-    currencyDisplay: 'code',
     minimumFractionDigits: 0,
   })
     .format(v)
-    .replace('\u00A0XOF', ' XOF')
+    .replace(/\u00A0/g, ' ') + ' F CFA'
 }
 
 // Props types from controller
@@ -141,7 +138,7 @@ export default function ShopDashboard({ shop, filters, revenue_by_day, by_produc
               <LineChart data={revenue_by_day} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' XOF', '')} tick={{ fontSize: 12 }} width={80} />
+                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} tick={{ fontSize: 12 }} width={80} />
                 <Tooltip wrapperClassName="rounded-md border bg-popover text-popover-foreground shadow-md" formatter={(value: number) => [formatMoney(value), 'Montant']} labelFormatter={(l) => `Date: ${l}`} />
                 <Line type="monotone" dataKey="total_amount" stroke="#16a34a" strokeWidth={2} dot={false} />
               </LineChart>
@@ -157,7 +154,7 @@ export default function ShopDashboard({ shop, filters, revenue_by_day, by_produc
               <BarChart data={by_product} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} angle={-30} height={60} textAnchor="end" />
-                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' XOF', '')} width={70} />
+                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} />
                 <Tooltip wrapperClassName="rounded-md border bg-popover text-popover-foreground shadow-md" formatter={(value: number) => [formatMoney(value), 'Montant']} labelFormatter={(l) => l as string} />
                 <Bar dataKey="amount" fill="#3b82f6" />
               </BarChart>
@@ -173,7 +170,7 @@ export default function ShopDashboard({ shop, filters, revenue_by_day, by_produc
               <BarChart data={by_client} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} angle={-30} height={60} textAnchor="end" />
-                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' XOF', '')} width={70} />
+                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} />
                 <Tooltip wrapperClassName="rounded-md border bg-popover text-popover-foreground shadow-md" formatter={(value: number) => [formatMoney(value), 'Montant']} labelFormatter={(l) => l as string} />
                 <Bar dataKey="amount" fill="#8b5cf6" />
               </BarChart>
@@ -189,7 +186,7 @@ export default function ShopDashboard({ shop, filters, revenue_by_day, by_produc
               <BarChart data={by_service} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} angle={-30} height={60} textAnchor="end" />
-                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' XOF', '')} width={70} />
+                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} />
                 <Tooltip wrapperClassName="rounded-md border bg-popover text-popover-foreground shadow-md" formatter={(value: number) => [formatMoney(value), 'Montant']} labelFormatter={(l) => l as string} />
                 <Bar dataKey="amount" fill="#f59e0b" />
               </BarChart>
@@ -205,7 +202,7 @@ export default function ShopDashboard({ shop, filters, revenue_by_day, by_produc
               <BarChart data={by_hairdresser} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} angle={-30} height={60} textAnchor="end" />
-                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' XOF', '')} width={70} />
+                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} />
                 <Tooltip wrapperClassName="rounded-md border bg-popover text-popover-foreground shadow-md" formatter={(value: number) => [formatMoney(value), 'Montant']} labelFormatter={(l) => l as string} />
                 <Bar dataKey="amount" fill="#10b981" />
               </BarChart>

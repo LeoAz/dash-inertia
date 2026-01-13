@@ -54,6 +54,8 @@ export default function AllSalesPage() {
     })
   }
 
+  const fmt = (v: number) => new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(v).replace(/\u00A0/g, ' ') + ' F CFA'
+
   return (
     <AppHeaderLayout contentFullWidth contentClassName="px-26 md:px-28 mt-5">
       <Head title="Historique des ventes" />
@@ -183,7 +185,7 @@ export default function AllSalesPage() {
                       )
                     })()}
                   </TableCell>
-                  <TableCell className="py-2 text-right">{Number(r.total_amount).toLocaleString()} XOF</TableCell>
+                  <TableCell className="py-2 text-right">{fmt(Number(r.total_amount))}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -88,5 +88,5 @@ export default function ServiceSalesReport({ shop, filters, rows, totals }: Prop
 }
 
 function formatMoney(v: number): string {
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', currencyDisplay: 'code', minimumFractionDigits: 0 }).format(v).replace('\u00A0XOF', ' XOF')
+  return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(v).replace(/\u00A0/g, ' ') + ' F CFA'
 }

@@ -52,7 +52,7 @@ class SaleResource extends JsonResource
             if ($pct > 0) {
                 $promotionLabel = $pct.'%';
             } elseif ($amt > 0) {
-                $promotionLabel = number_format($amt, 0, ',', ' ').' XOF';
+                $promotionLabel = number_format($amt, 0, ',', ' ').' F CFA';
             } else {
                 $promotionLabel = __('Promotion');
             }

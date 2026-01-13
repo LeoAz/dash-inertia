@@ -84,6 +84,8 @@ export default function SaleForm({
         initial?.promotion_id ? String(initial.promotion_id) : ''
     )
 
+    const fmt = (v: number) => new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(v).replace(/\u00A0/g, ' ') + ' F CFA'
+
     /* --------------  Autocomplete client (nom & téléphone) ----------------- */
     type ClientSuggestion = { name: string; phone: string }
     const [suggestions, setSuggestions] = useState<ClientSuggestion[]>([])
@@ -522,7 +524,7 @@ export default function SaleForm({
                                 <SelectContent>
                                     {serviceOptions.map((s) => (
                                         <SelectItem key={s.id} value={String(s.id)}>
-                                            {s.name} — {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(s.price)}
+                                            {s.name} — {fmt(s.price)}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -573,7 +575,7 @@ export default function SaleForm({
                                             <TableCell className="py-2">{s.name}</TableCell>
                                             <TableCell className="py-2 text-center">{line.quantity}</TableCell>
                                             <TableCell className="py-2 text-right">
-                                                {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(s.price * line.quantity)}
+                                                {fmt(s.price * line.quantity)}
                                             </TableCell>
                                             <TableCell className="py-2 text-right">
                                                 <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={() => removeService(idx)}>
@@ -590,7 +592,7 @@ export default function SaleForm({
                     <div className="flex items-center justify-end gap-3 text-sm">
                         <div className="text-muted-foreground">Total services :</div>
                         <div className="font-medium">
-                            {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(servicesSubtotal)}
+                            {fmt(servicesSubtotal)}
                         </div>
                     </div>
                 </CardContent>
@@ -611,7 +613,7 @@ export default function SaleForm({
                                 <SelectContent>
                                     {productOptions.map((p) => (
                                         <SelectItem key={p.id} value={String(p.id)}>
-                                            {p.name} — {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(p.price)}
+                                            {p.name} — {fmt(p.price)}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -672,7 +674,7 @@ export default function SaleForm({
                                             <TableCell className="py-2">{p.name}</TableCell>
                                             <TableCell className="py-2 text-right">{line.quantity}</TableCell>
                                             <TableCell className="py-2 text-right">
-                                                {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(subtotal)}
+                                                {fmt(subtotal)}
                                             </TableCell>
                                             <TableCell className="py-2 text-right">
                                                 <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={() => removeProduct(idx)}>
@@ -689,7 +691,7 @@ export default function SaleForm({
                     <div className="flex items-center justify-end gap-3 text-sm">
                         <div className="text-muted-foreground">Total produits :</div>
                         <div className="font-medium">
-                            {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(productsSubtotal)}
+                            {fmt(productsSubtotal)}
                         </div>
                     </div>
                 </CardContent>
@@ -747,7 +749,7 @@ export default function SaleForm({
                                                 {pr.percentage
                                                     ? `(${pr.percentage}%)`
                                                     : pr.amount
-                                                        ? `(${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(pr.amount)})`
+                                                        ? `(${fmt(pr.amount)})`
                                                         : ''}
                                             </SelectItem>
                                         ))}
@@ -760,20 +762,20 @@ export default function SaleForm({
                     <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
                         <div className="flex items-center justify-between rounded-md border px-3 py-2">
                             <span className="font-medium">
-                                {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(productsSubtotal)}
+                                {fmt(productsSubtotal)}
                             </span>
                         </div>
                         <div className="flex items-center justify-between rounded-md border px-3 py-2">
                             <span className="font-medium">
-                                {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(servicesSubtotal)}
+                                {fmt(servicesSubtotal)}
                             </span>
                         </div>
                         <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                            <span className="font-medium">− {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(discount)}</span>
+                            <span className="font-medium">− {fmt(discount)}</span>
                         </div>
                         <div className="flex items-center justify-between rounded-md border px-3 py-2">
                             <span className="font-semibold">
-                                {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(grandTotal)}
+                                {fmt(grandTotal)}
                             </span>
                         </div>
                     </div>

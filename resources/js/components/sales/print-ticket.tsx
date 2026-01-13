@@ -99,6 +99,8 @@ export default function PrintTicket({ sale, onClose }: PrintTicketProps) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    const fmt = (v: number) => new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(v).replace(/\u00A0/g, ' ') + ' F CFA'
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-lg bg-white shadow-xl">
@@ -175,12 +177,7 @@ export default function PrintTicket({ sale, onClose }: PrintTicketProps) {
                                             ` x${item.quantity}`}
                                     </span>
                                     <span>
-                                        {new Intl.NumberFormat('fr-FR', {
-                                            style: 'currency',
-                                            currency: 'XOF',
-                                        }).format(
-                                            item.line_subtotal || item.price,
-                                        )}
+                                        {fmt(item.line_subtotal || item.price)}
                                     </span>
                                 </div>
                             ))}
@@ -190,18 +187,12 @@ export default function PrintTicket({ sale, onClose }: PrintTicketProps) {
                             <div className="item text-red-600">
                                 <span>Remise ({sale.promotion_label})</span>
                                 <span>
-                                    -
-                                    {new Intl.NumberFormat('fr-FR', {
-                                        style: 'currency',
-                                        currency: 'XOF',
-                                    }).format(
-                                        sale.details.reduce(
+                                    - {fmt(sale.details.reduce(
                                             (sum, it) =>
                                                 sum +
                                                 (it.line_subtotal || it.price),
                                             0,
-                                        ) - sale.total_amount,
-                                    )}
+                                        ) - sale.total_amount)}
                                 </span>
                             </div>
                         )}
@@ -209,10 +200,7 @@ export default function PrintTicket({ sale, onClose }: PrintTicketProps) {
                         <div className="total item">
                             <span>TOTAL:</span>
                             <span>
-                                {new Intl.NumberFormat('fr-FR', {
-                                    style: 'currency',
-                                    currency: 'XOF',
-                                }).format(sale.total_amount)}
+                                {fmt(sale.total_amount)}
                             </span>
                         </div>
 
@@ -265,10 +253,7 @@ export default function PrintTicket({ sale, onClose }: PrintTicketProps) {
                                         ` x${item.quantity}`}
                                 </span>
                                 <span>
-                                    {new Intl.NumberFormat('fr-FR', {
-                                        style: 'currency',
-                                        currency: 'XOF',
-                                    }).format(item.line_subtotal || item.price)}
+                                    {fmt(item.line_subtotal || item.price)}
                                 </span>
                             </div>
                         ))}
@@ -278,10 +263,7 @@ export default function PrintTicket({ sale, onClose }: PrintTicketProps) {
                                 <span>Remise ({sale.promotion_label})</span>
                                 <span>
                                     -
-                                    {new Intl.NumberFormat('fr-FR', {
-                                        style: 'currency',
-                                        currency: 'XOF',
-                                    }).format(
+                                    {fmt(
                                         sale.details.reduce(
                                             (sum, it) =>
                                                 sum +
@@ -298,10 +280,7 @@ export default function PrintTicket({ sale, onClose }: PrintTicketProps) {
                         <div className="flex justify-between font-bold">
                             <span>TOTAL:</span>
                             <span>
-                                {new Intl.NumberFormat('fr-FR', {
-                                    style: 'currency',
-                                    currency: 'XOF',
-                                }).format(sale.total_amount)}
+                                {fmt(sale.total_amount)}
                             </span>
                         </div>
 

@@ -125,7 +125,7 @@ export default function SalesIndex(props: SalesPageProps) {
     })
   }
 
-  const fmt = (v: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', minimumFractionDigits: 0 }).format(v)
+  const fmt = (v: number) => new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(v).replace(/\u00A0/g, ' ') + ' F CFA'
 
   return (
     <>
@@ -510,7 +510,7 @@ function SaleFormLegacy({ mode, initial, onDone, products: productOptions, servi
                 </SelectTrigger>
                 <SelectContent>
                   {serviceOptions.map((s) => (
-                    <SelectItem key={s.id} value={String(s.id)}>{s.name} — {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(s.price)}</SelectItem>
+                    <SelectItem key={s.id} value={String(s.id)}>{s.name} — {fmt(s.price)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -540,7 +540,7 @@ function SaleFormLegacy({ mode, initial, onDone, products: productOptions, servi
                   return (
                     <TableRow key={`srv-${idx}`}>
                       <TableCell className="py-2">{s?.name}</TableCell>
-                      <TableCell className="py-2 text-right">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(unit)}</TableCell>
+                      <TableCell className="py-2 text-right">{fmt(unit)}</TableCell>
                       <TableCell className="py-2 text-right">
                         <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={() => removeService(idx)}>Retirer</Button>
                       </TableCell>
@@ -553,7 +553,7 @@ function SaleFormLegacy({ mode, initial, onDone, products: productOptions, servi
 
           <div className="flex items-center justify-end gap-3 text-sm">
             <div className="text-muted-foreground">Total services:</div>
-            <div className="font-medium">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(servicesSubtotal)}</div>
+            <div className="font-medium">{fmt(servicesSubtotal)}</div>
           </div>
         </div>
       </div>
@@ -572,7 +572,7 @@ function SaleFormLegacy({ mode, initial, onDone, products: productOptions, servi
                 </SelectTrigger>
                 <SelectContent>
                   {productOptions.map((p) => (
-                    <SelectItem key={p.id} value={String(p.id)}>{p.name} — {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(p.price)}</SelectItem>
+                    <SelectItem key={p.id} value={String(p.id)}>{p.name} — {fmt(p.price)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -608,7 +608,7 @@ function SaleFormLegacy({ mode, initial, onDone, products: productOptions, servi
                     <TableRow key={`prod-${idx}`}>
                       <TableCell className="py-2">{p?.name}</TableCell>
                       <TableCell className="py-2 text-right">{line.quantity}</TableCell>
-                      <TableCell className="py-2 text-right">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(subtotal)}</TableCell>
+                      <TableCell className="py-2 text-right">{fmt(subtotal)}</TableCell>
                       <TableCell className="py-2 text-right">
                         <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={() => removeProduct(idx)}>Retirer</Button>
                       </TableCell>
@@ -621,7 +621,7 @@ function SaleFormLegacy({ mode, initial, onDone, products: productOptions, servi
 
           <div className="flex items-center justify-end gap-3 text-sm">
             <div className="text-muted-foreground">Total produits:</div>
-            <div className="font-medium">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(productsSubtotal)}</div>
+            <div className="font-medium">{fmt(productsSubtotal)}</div>
           </div>
         </div>
       </div>
@@ -665,7 +665,7 @@ function SaleFormLegacy({ mode, initial, onDone, products: productOptions, servi
                   <SelectContent>
                     {promoOptions.map((pr) => (
                       <SelectItem key={pr.id} value={String(pr.id)}>
-                        {pr.name} {pr.percentage ? `(${pr.percentage}%)` : pr.amount ? `(${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(pr.amount)})` : ''}
+                        {pr.name} {pr.percentage ? `(${pr.percentage}%)` : pr.amount ? `(${fmt(pr.amount)})` : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -676,11 +676,11 @@ function SaleFormLegacy({ mode, initial, onDone, products: productOptions, servi
 
           <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
             <div className="flex items-center justify-between rounded-md border px-3 py-2">
-                <span className="font-medium">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(productsSubtotal)}</span>
+                <span className="font-medium">{fmt(productsSubtotal)}</span>
             </div>
-            <div className="flex items-center justify-between rounded-md border px-3 py-2"><span className="font-medium">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(servicesSubtotal)}</span></div>
-            <div className="flex items-center justify-between rounded-md border px-3 py-2"><span className="font-medium">− {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(discount)}</span></div>
-            <div className="flex items-center justify-between rounded-md border px-3 py-2"><span className="font-semibold">{new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(grandTotal)}</span></div>
+            <div className="flex items-center justify-between rounded-md border px-3 py-2"><span className="font-medium">{fmt(servicesSubtotal)}</span></div>
+            <div className="flex items-center justify-between rounded-md border px-3 py-2"><span className="font-medium">− {fmt(discount)}</span></div>
+            <div className="flex items-center justify-between rounded-md border px-3 py-2"><span className="font-semibold">{fmt(grandTotal)}</span></div>
           </div>
         </div>
       </div>
