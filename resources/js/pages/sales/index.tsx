@@ -129,7 +129,7 @@ export default function SalesIndex(props: SalesPageProps) {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="flex items-center gap-2">
-                    <span className="hidden sm:inline">Ventes du :</span>
+                    <span className="hidden sm:inline">Liste des ventes du :</span>
                     {new Date(currentDate + 'T00:00:00').toLocaleDateString('fr-FR')}
                   </Button>
                 </PopoverTrigger>
@@ -160,16 +160,16 @@ export default function SalesIndex(props: SalesPageProps) {
         {/* Stats cards */}
         <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Card>
-            <CardHeader className="py-3"><CardTitle className="text-sm">Montant total vendu</CardTitle></CardHeader>
-            <CardContent className="pb-3 text-xl font-semibold">{fmt(stats.totalVendu)}</CardContent>
+            <CardHeader className="py-2"><CardTitle className="text-sm">Montant total vendu</CardTitle></CardHeader>
+            <CardContent className="pb-3 text-2xl font-semibold">{fmt(stats.totalVendu)}</CardContent>
           </Card>
           <Card>
-            <CardHeader className="py-3"><CardTitle className="text-sm">Montant total produits</CardTitle></CardHeader>
-            <CardContent className="pb-3 text-xl font-semibold">{fmt(stats.totalProduits)}</CardContent>
+            <CardHeader className="py-2"><CardTitle className="text-sm">Montant total produits</CardTitle></CardHeader>
+            <CardContent className="pb-3 text-2xl font-semibold">{fmt(stats.totalProduits)}</CardContent>
           </Card>
           <Card>
-            <CardHeader className="py-3"><CardTitle className="text-sm">Montant total services</CardTitle></CardHeader>
-            <CardContent className="pb-3 text-xl font-semibold">{fmt(stats.totalServices)}</CardContent>
+            <CardHeader className="py-2"><CardTitle className="text-sm">Montant total services</CardTitle></CardHeader>
+            <CardContent className="pb-3 text-2xl font-semibold">{fmt(stats.totalServices)}</CardContent>
           </Card>
         </div>
       </SaleLayout>

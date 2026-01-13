@@ -125,7 +125,7 @@ export default function SaleLayout({ breadcrumbs, title, shopId, left, sales, on
                     )}
                 >
                     <div className="mb-2 flex items-center justify-between gap-2 md:mb-3">
-                        <h2 className="text-base font-semibold md:text-lg">Ventes du jour</h2>
+                        <h2 className="text-base font-semibold md:text-lg">Liste des ventes</h2>
                         <div className="flex items-center gap-2">
                             {hasLeft && (
                                 <Button type="button" variant="outline" className="lg:hidden" onClick={onToggleSalesOnTablet}>
