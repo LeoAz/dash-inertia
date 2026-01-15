@@ -18,20 +18,11 @@ class DashboardController extends Controller
     {
         [$from, $to] = $this->dateRange($request);
 
-        // Définition de la requête de base pour les ventes "uniques" (élimine les doublons de saisie)
-        $uniqueSalesQuery = Sale::query()
-            ->select([
-                DB::raw('MIN(id) as id'),
-                'shop_id',
-                'sale_date',
-                'total_amount',
-                'customer_name',
-                'hairdresser_id',
-            ])
-            ->where('shop_id', $shop->id)
-            ->when($from, fn ($q) => $q->whereDate('sale_date', '>=', $from))
-            ->when($to, fn ($q) => $q->whereDate('sale_date', '<=', $to))
-            ->groupBy(['shop_id', 'customer_name', 'total_amount', 'sale_date', 'hairdresser_id']);
+        // Définition de la requête de base pour les ventes
+        $baseSalesQuery = Sale::query()
+            ->where('sales.shop_id', $shop->id)
+            ->when($from, fn ($q) => $q->whereDate('sales.sale_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('sales.sale_date', '<=', $to));
 
         // CA par produit (bar)
         $productSales = ProductSale::query()
@@ -42,10 +33,9 @@ class DashboardController extends Controller
                 'sales.sale_date',
             ])
             ->join('sales', 'sales.id', '=', 'product_sales.sale_id')
-            ->joinSub($uniqueSalesQuery, 'unique_s', function ($join) {
-                $join->on('unique_s.id', '=', 'sales.id');
-            })
             ->where('sales.shop_id', $shop->id)
+            ->when($from, fn ($q) => $q->whereDate('sales.sale_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('sales.sale_date', '<=', $to))
             ->with('product:id,name')
             ->get();
 
@@ -58,16 +48,14 @@ class DashboardController extends Controller
                 'sales.sale_date',
             ])
             ->join('sales', 'sales.id', '=', 'service_sales.sale_id')
-            ->joinSub($uniqueSalesQuery, 'unique_s', function ($join) {
-                $join->on('unique_s.id', '=', 'sales.id');
-            })
             ->where('sales.shop_id', $shop->id)
+            ->when($from, fn ($q) => $q->whereDate('sales.sale_date', '>=', $from))
+            ->when($to, fn ($q) => $q->whereDate('sales.sale_date', '<=', $to))
             ->with('service:id,name')
             ->get();
 
         // Évolution du CA par jour
-        $revenueByDay = DB::table(DB::raw("({$uniqueSalesQuery->toSql()}) as unique_sales"))
-            ->mergeBindings($uniqueSalesQuery->getQuery())
+        $revenueByDay = (clone $baseSalesQuery)
             ->select([
                 DB::raw('DATE(sale_date) as date'),
                 DB::raw('SUM(total_amount) as total_amount'),
@@ -92,8 +80,7 @@ class DashboardController extends Controller
             ->values();
 
         // CA par client (bar)
-        $byClient = DB::table(DB::raw("({$uniqueSalesQuery->toSql()}) as unique_sales"))
-            ->mergeBindings($uniqueSalesQuery->getQuery())
+        $byClient = (clone $baseSalesQuery)
             ->select([
                 DB::raw("COALESCE(NULLIF(TRIM(customer_name), ''), 'Client Inconnu') as customer_name"),
                 DB::raw('SUM(total_amount) as total_amount'),
@@ -120,13 +107,12 @@ class DashboardController extends Controller
             ->values();
 
         // CA par coiffeur (bar)
-        $byHairdresser = DB::table(DB::raw("({$uniqueSalesQuery->toSql()}) as unique_sales"))
-            ->mergeBindings($uniqueSalesQuery->getQuery())
+        $byHairdresser = (clone $baseSalesQuery)
             ->select([
                 DB::raw("COALESCE(hairdressers.name, 'Non assigné') as hairdresser_name"),
-                DB::raw('SUM(unique_sales.total_amount) as total_amount'),
+                DB::raw('SUM(total_amount) as total_amount'),
             ])
-            ->leftJoin('hairdressers', 'hairdressers.id', '=', 'unique_sales.hairdresser_id')
+            ->leftJoin('hairdressers', 'hairdressers.id', '=', 'sales.hairdresser_id')
             ->groupBy(DB::raw("COALESCE(hairdressers.name, 'Non assigné')"))
             ->orderByDesc('total_amount')
             ->limit(20)
