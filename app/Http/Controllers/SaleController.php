@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSaleRequest;
 use App\Http\Requests\UpdateSaleRequest;
+use App\Http\Resources\SaleResource;
 use App\Models\Hairdresser;
 use App\Models\Product;
 use App\Models\Promotion;
@@ -62,11 +63,9 @@ class SaleController extends Controller
                         $h->where('name', 'like', "%{$q}%");
                     })
                     ->orWhereHas('products', function ($p) use ($q) {
-                        // match on product name
                         $p->where('products.name', 'like', "%{$q}%");
                     })
                     ->orWhereHas('services', function ($s) use ($q) {
-                        // match on service name
                         $s->where('services.name', 'like', "%{$q}%");
                     });
             });
@@ -94,7 +93,7 @@ class SaleController extends Controller
         $paginator = $query->paginate($perPage)->appends($request->query());
 
         $sales = $paginator->through(function (Sale $s) use ($request) {
-            return (new \App\Http\Resources\SaleResource($s))->toArray($request);
+            return (new SaleResource($s))->toArray($request);
         });
 
         return Inertia::render('sales/all-sales', [
@@ -247,7 +246,7 @@ class SaleController extends Controller
         }
 
         $sales = $query->get()->map(function (Sale $s) use ($request) {
-            return (new \App\Http\Resources\SaleResource($s))->toArray($request);
+            return (new SaleResource($s))->toArray($request);
         });
 
         // Totals for today/selected date considering current search query
