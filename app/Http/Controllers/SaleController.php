@@ -14,6 +14,7 @@ use App\Models\Shop;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -390,6 +391,12 @@ class SaleController extends Controller
     {
         $user = $request->user();
         $data = $request->validated();
+
+        // Prevent duplicate submissions within a short timeframe
+        $lockKey = 'sale_store_lock_'.($user?->id ?? 'guest').'_'.md5(json_encode($data));
+        if (! Cache::add($lockKey, true, 5)) { // 5 seconds lock
+            return redirect()->route('shops.sales.index', $shop);
+        }
 
         return DB::transaction(function () use ($shop, $user, $data) {
             // Normalize items

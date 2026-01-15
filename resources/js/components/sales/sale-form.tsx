@@ -83,6 +83,7 @@ export default function SaleForm({
     const [selectedPromotionId, setSelectedPromotionId] = useState<string>(
         initial?.promotion_id ? String(initial.promotion_id) : ''
     )
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     const fmt = (v: number) => new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(v).replace(/\u00A0/g, ' ') + ' F CFA'
 
@@ -223,11 +224,17 @@ export default function SaleForm({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
 
+        if (isSubmitting) {
+            return
+        }
+
         // Champ requis côté client pour une meilleure UX (validation serveur également en place)
         if (!paymentMethod) {
             toast.error('Veuillez sélectionner un moyen de paiement.')
             return
         }
+
+        setIsSubmitting(true)
 
         const payload = {
             customer_name: customerName,
@@ -299,7 +306,10 @@ export default function SaleForm({
                     setPaymentMethod('')
                     router.reload({ only: ['sales'] })
                 },
-                onError: (errs) => Object.values(errs).forEach((m) => m && toast.error(String(m))),
+                onError: (errs) => {
+                    Object.values(errs).forEach((m) => m && toast.error(String(m)))
+                },
+                onFinish: () => setIsSubmitting(false),
             })
         } else {
             router.patch(
@@ -314,7 +324,10 @@ export default function SaleForm({
                         onDone?.()
                         router.reload({ only: ['sales'] })
                     },
-                    onError: (errs) => Object.values(errs).forEach((m) => m && toast.error(String(m))),
+                    onError: (errs) => {
+                        Object.values(errs).forEach((m) => m && toast.error(String(m)))
+                    },
+                    onFinish: () => setIsSubmitting(false),
                 }
             )
         }
@@ -787,8 +800,8 @@ export default function SaleForm({
                 <div className="text-sm text-muted-foreground">
                     Lignes : <span className="text-foreground">{productLines.length + serviceLines.length}</span>
                 </div>
-                <Button type="submit" disabled={productLines.length === 0 && serviceLines.length === 0}>
-                    {mode === 'create' ? 'Enregistrer en caisse' : 'Mettre à jour la vente'}
+                <Button type="submit" disabled={isSubmitting || (productLines.length === 0 && serviceLines.length === 0)}>
+                    {isSubmitting ? 'Enregistrement...' : (mode === 'create' ? 'Enregistrer en caisse' : 'Mettre à jour la vente')}
                 </Button>
             </div>
         </form>
