@@ -7,16 +7,15 @@ import DateRangePicker42, { JsDateRange } from '@/components/comp-42'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
   XAxis,
   YAxis,
-  Tooltip,
-  BarChart,
-  Bar,
-  CartesianGrid,
 } from 'recharts'
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 
 // Simple money formatter consistent with reports pages
 function formatMoney(v: number): string {
@@ -53,6 +52,29 @@ type Props = {
 }
 
 export default function ShopDashboard({ shop, filters, revenue_by_day, by_product, by_client, by_service, by_hairdresser, highlights }: Props) {
+  const chartConfig = {
+    revenue: {
+      label: 'Chiffre d\'affaires',
+      color: 'var(--chart-1)',
+    },
+    product: {
+      label: 'Produit',
+      color: 'var(--chart-2)',
+    },
+    client: {
+      label: 'Client',
+      color: 'var(--chart-5)',
+    },
+    service: {
+      label: 'Service',
+      color: 'var(--chart-4)',
+    },
+    hairdresser: {
+      label: 'Coiffeur',
+      color: 'var(--chart-3)',
+    },
+  } satisfies ChartConfig
+
   const [range, setRange] = useState<JsDateRange | undefined>({
     from: filters.date_from ? new Date(filters.date_from) : undefined,
     to: filters.date_to ? new Date(filters.date_to) : undefined,
@@ -131,82 +153,103 @@ export default function ShopDashboard({ shop, filters, revenue_by_day, by_produc
         {/* CA total (line) */}
         <Card className="col-span-1 xl:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Chiffre d\'affaires — évolution</CardTitle>
+            <CardTitle className="text-base">Chiffre d'affaires — évolution</CardTitle>
           </CardHeader>
           <CardContent className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={revenue_by_day} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} tick={{ fontSize: 12 }} width={80} />
-                <Tooltip wrapperClassName="rounded-md border bg-popover text-popover-foreground shadow-md" formatter={(value: number) => [formatMoney(value), 'Montant']} labelFormatter={(l) => `Date: ${l}`} />
-                <Line type="monotone" dataKey="total_amount" stroke="#16a34a" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
+            <ChartContainer config={chartConfig} className="h-full w-full">
+              <AreaChart data={revenue_by_day} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-revenue)" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="var(--color-revenue)" stopOpacity={0.1} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={80} tickLine={false} axisLine={false} tickMargin={8} />
+                <ChartTooltip content={<ChartTooltipContent labelFormatter={(l) => `Date: ${l}`} formatter={(value: number) => formatMoney(value)} />} />
+                <Area
+                  type="monotone"
+                  dataKey="total_amount"
+                  stroke="var(--color-revenue)"
+                  fillOpacity={1}
+                  fill="url(#fillRevenue)"
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ChartContainer>
           </CardContent>
         </Card>
 
         {/* CA par produit (bar) */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">CA par produit</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">CA par produit</CardTitle>
+          </CardHeader>
           <CardContent className="h-[360px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ChartContainer config={chartConfig} className="h-full w-full">
               <BarChart data={by_product} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} angle={-30} height={60} textAnchor="end" />
-                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} />
-                <Tooltip wrapperClassName="rounded-md border bg-popover text-popover-foreground shadow-md" formatter={(value: number) => [formatMoney(value), 'Montant']} labelFormatter={(l) => l as string} />
-                <Bar dataKey="amount" fill="#3b82f6" />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} interval={0} angle={-30} height={60} textAnchor="end" />
+                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} tickLine={false} axisLine={false} tickMargin={8} />
+                <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatMoney(value)} />} />
+                <Bar dataKey="amount" fill="var(--color-product)" radius={4} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
 
         {/* CA par client (bar) */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">CA par client</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">CA par client</CardTitle>
+          </CardHeader>
           <CardContent className="h-[360px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ChartContainer config={chartConfig} className="h-full w-full">
               <BarChart data={by_client} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} angle={-30} height={60} textAnchor="end" />
-                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} />
-                <Tooltip wrapperClassName="rounded-md border bg-popover text-popover-foreground shadow-md" formatter={(value: number) => [formatMoney(value), 'Montant']} labelFormatter={(l) => l as string} />
-                <Bar dataKey="amount" fill="#8b5cf6" />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} interval={0} angle={-30} height={60} textAnchor="end" />
+                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} tickLine={false} axisLine={false} tickMargin={8} />
+                <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatMoney(value)} />} />
+                <Bar dataKey="amount" fill="var(--color-client)" radius={4} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
 
-        {/* CA par service (line) */}
+        {/* CA par service (bar) */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">CA par service</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">CA par service</CardTitle>
+          </CardHeader>
           <CardContent className="h-[360px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ChartContainer config={chartConfig} className="h-full w-full">
               <BarChart data={by_service} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} angle={-30} height={60} textAnchor="end" />
-                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} />
-                <Tooltip wrapperClassName="rounded-md border bg-popover text-popover-foreground shadow-md" formatter={(value: number) => [formatMoney(value), 'Montant']} labelFormatter={(l) => l as string} />
-                <Bar dataKey="amount" fill="#f59e0b" />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} interval={0} angle={-30} height={60} textAnchor="end" />
+                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} tickLine={false} axisLine={false} tickMargin={8} />
+                <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatMoney(value)} />} />
+                <Bar dataKey="amount" fill="var(--color-service)" radius={4} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
 
         {/* CA par coiffeur (bar) */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">CA par coiffeur</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">CA par coiffeur</CardTitle>
+          </CardHeader>
           <CardContent className="h-[360px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ChartContainer config={chartConfig} className="h-full w-full">
               <BarChart data={by_hairdresser} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} angle={-30} height={60} textAnchor="end" />
-                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} />
-                <Tooltip wrapperClassName="rounded-md border bg-popover text-popover-foreground shadow-md" formatter={(value: number) => [formatMoney(value), 'Montant']} labelFormatter={(l) => l as string} />
-                <Bar dataKey="amount" fill="#10b981" />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} interval={0} angle={-30} height={60} textAnchor="end" />
+                <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} tickLine={false} axisLine={false} tickMargin={8} />
+                <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatMoney(value)} />} />
+                <Bar dataKey="amount" fill="var(--color-hairdresser)" radius={4} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
