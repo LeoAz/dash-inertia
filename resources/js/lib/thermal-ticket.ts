@@ -26,12 +26,8 @@ export interface TicketShop {
     address?: string | null
 }
 
-function formatAmount(value: number): string {
-    return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(value).replace(/\s/g, ' ')
-}
-
 export function formatCurrency(value: number): string {
-    return `${formatAmount(value)} F CFA`
+    return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(value).replace(/\s/g, ' ') + ' F CFA'
 }
 
 function escapeHtml(value: string): string {
@@ -50,50 +46,45 @@ export function lineTotal(line: TicketLine): number {
     return Number(line.line_subtotal ?? unit * Number(line.quantity ?? 1))
 }
 
-function renderLine(line: TicketLine, index: number): string {
+function renderLine(line: TicketLine): string {
     const quantity = Number(line.quantity ?? 1)
     const unit = Number(line.unit_price ?? line.price ?? 0)
-    return `<div class="cols line"><span>${index + 1}.</span><span class="name">${quantity} × ${escapeHtml(line.name)}${
-        quantity > 1 ? `<small>à ${formatAmount(unit)} l'unité</small>` : ''
-    }</span><span class="amount">${formatAmount(lineTotal(line))}</span></div>`
+    return `<div class="row"><span class="name">${escapeHtml(line.name)}${
+        quantity > 1 ? `<small>${quantity} × ${formatCurrency(unit)}</small>` : ''
+    }</span><span class="amount">${formatCurrency(lineTotal(line))}</span></div>`
 }
 
 /**
- * Design du reçu : en-tête centré, informations sur deux colonnes, tableau numéroté et total encadré.
- * La tête thermique ne sait imprimer que du noir pur : le gris est tramé et paraît pâle. Tout est donc en
- * graisse maximale, renforcé d'un fin contour, et le logo est forcé en noir et blanc. La hiérarchie repose
- * sur la taille, la casse et les filets.
+ * Design du reçu. La tête thermique ne sait imprimer que du noir pur : le gris est tramé et paraît pâle.
+ * Tout est donc en graisse maximale, renforcé d'un fin contour, et le logo est forcé en noir et blanc.
+ * La hiérarchie repose sur la taille, les filets et le bandeau inversé du total.
  * La pile de polices couvre les postes de caisse Windows (Consolas), macOS/iPadOS (Menlo) et Android.
  */
 const TICKET_CSS = `
 @page{margin:0}
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{background:#fff;color:#000}
-body{font:800 11.5px/1.4 ui-monospace,Menlo,Consolas,'DejaVu Sans Mono','Liberation Mono','Courier New',monospace;-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-text-stroke:.2px #000}
-.ticket{width:${CONTENT_WIDTH_MM}mm;margin-left:${CONTENT_LEFT_MM}mm;padding:1mm 0 3mm}
-.head{padding-bottom:2.5mm;text-align:center}
-.logo{display:block;height:17mm;width:auto;margin:0 auto 2mm;filter:grayscale(1) brightness(.8) contrast(12)}
-.contact{margin-top:.5mm;font-size:11px}
-.block{padding:2.5mm 0;border-top:1.5px dashed #000}
-.meta{display:grid;grid-template-columns:1fr auto;gap:.8mm 3mm;font-size:11px}
-.meta div:nth-child(n+3){grid-column:1/-1}
-.meta div{overflow-wrap:anywhere}
-.cols{display:grid;grid-template-columns:6mm 1fr auto;gap:2mm;align-items:baseline}
-.heading{padding:1.5mm 0;border-top:1.5px dashed #000;font-size:11px;letter-spacing:1px;text-transform:uppercase}
-.line+.line{margin-top:1.5mm}
+body{font:800 12px/1.3 ui-monospace,Menlo,Consolas,'DejaVu Sans Mono','Liberation Mono','Courier New',monospace;-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-text-stroke:.2px #000}
+.ticket{width:${CONTENT_WIDTH_MM}mm;margin-left:${CONTENT_LEFT_MM}mm;padding-bottom:3mm}
+.brand{text-align:center}
+.logo{display:block;height:15mm;width:auto;margin:0 auto 1mm;filter:grayscale(1) brightness(.8) contrast(12)}
+.contact{font-size:11px}
+.ref{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:0 2mm;margin-top:1.5mm;padding:1mm 0;border-top:2px solid #000;border-bottom:2px solid #000}
+.ref span:last-child{font-size:11px;white-space:nowrap}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:1mm 3mm;margin-top:1.5mm}
+.meta dt{font-size:11px;letter-spacing:.6px;text-transform:uppercase}
+.meta dd{overflow-wrap:anywhere}
+.lines{margin-top:1.5mm;border-top:1.5px solid #000}
+.row{display:flex;justify-content:space-between;gap:3mm;padding-top:1mm}
 .name{min-width:0;overflow-wrap:anywhere}
 .name small{display:block;font-size:11px}
-.amount{font-variant-numeric:tabular-nums;text-align:right}
-.sums{padding-left:8mm}
-.row{display:flex;justify-content:space-between;align-items:center;gap:3mm}
-.row+.row{margin-top:1mm}
-.total{margin-top:2mm;font-size:13px;white-space:nowrap}
-.sums .total:first-child{margin-top:0}
-.box{padding:1mm 2.5mm;border:2px solid #000;font-size:15px;font-variant-numeric:tabular-nums}
-.foot{text-align:center}
-.qr{display:block;width:22mm;height:22mm;margin:0 auto 2.5mm}
-.thanks{font-size:11.5px}
-.bye{margin-top:.5mm;font-size:11px}
+.amount{flex:none;font-variant-numeric:tabular-nums}
+.sums{margin-top:1mm;border-top:1.5px dashed #000}
+.total{display:flex;justify-content:space-between;align-items:center;margin-top:1.5mm;padding:1.5mm 2.5mm;background:#000;color:#fff;-webkit-text-stroke:.2px #fff;white-space:nowrap}
+.total span:first-child{font-size:12px;letter-spacing:1.5px}
+.total span:last-child{font-size:16px;font-variant-numeric:tabular-nums}
+.qr{display:block;width:22mm;height:22mm;margin:2.5mm auto 1.5mm}
+.thanks{text-align:center}
 `
 
 export function buildTicketHtml(sale: SaleRow, shop: TicketShop | undefined, origin = ''): string {
@@ -106,36 +97,29 @@ export function buildTicketHtml(sale: SaleRow, shop: TicketShop | undefined, ori
     const logo = shop?.logo_url || `${origin}/img/logo%201.png`
     const qrCode = `${origin}${qr.url({ shop: Number(sale.shop_id), sale: Number(sale.id) })}`
     const payment = sale.payment_method === 'orange_money' ? 'Orange Money' : sale.payment_method === 'caisse' ? 'Caisse' : null
-    const saleDate = new Date(sale.sale_date)
 
     const meta = [
-        ['Date', format(saleDate, 'dd/MM/yyyy', { locale: fr })],
-        ['Heure', format(saleDate, 'HH:mm', { locale: fr })],
         ['Client', sale.customer_name],
         ['Coiffeur', sale.hairdresser_name],
         ['Paiement', payment],
     ]
         .filter((entry): entry is [string, string] => Boolean(entry[1]))
-        .map(([label, value]) => `<div>${label} : <b>${escapeHtml(value)}</b></div>`)
+        .map(([label, value]) => `<div><dt>${label}</dt><dd>${escapeHtml(value)}</dd></div>`)
         .join('')
 
-    const contact = [shop?.address, shop?.phone ? `Tél : ${shop.phone}` : null]
-        .filter(Boolean)
-        .map((v) => `<div class="contact">${escapeHtml(String(v))}</div>`)
-        .join('')
+    const contact = [shop?.phone, shop?.address].filter(Boolean).map((v) => `<div class="contact">${escapeHtml(String(v))}</div>`).join('')
 
     return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Reçu ${escapeHtml(receipt)}</title>
 <style>${TICKET_CSS}</style></head><body><div class="ticket">
-<div class="head"><img class="logo" src="${escapeHtml(logo)}" alt="" onerror="this.remove()">
-${contact}</div>
-<div class="block meta">${meta}<div>Reçu n° : <b>${escapeHtml(receipt)}</b></div></div>
-${lines.length ? `<div class="cols heading"><span>N°</span><span>Désignation</span><span>F CFA</span></div>
-<div class="block">${lines.map(renderLine).join('')}</div>` : ''}
-<div class="block sums">${discount > 0 ? `<div class="row"><span>Sous-total</span><span class="amount">${formatAmount(subtotal)}</span></div>
-<div class="row"><span>Remise</span><span class="amount">-${formatAmount(discount)}</span></div>` : ''}
-<div class="row total"><span>Total :</span><span class="box">${formatCurrency(total)}</span></div></div>
-<div class="block foot"><img class="qr" src="${escapeHtml(qrCode)}" alt="" onerror="this.remove()">
-<div class="thanks">Merci pour votre visite !</div><div class="bye">À très bientôt</div></div>
+<div class="brand"><img class="logo" src="${escapeHtml(logo)}" alt="" onerror="this.remove()">${contact}</div>
+<div class="ref"><span>REÇU ${escapeHtml(receipt)}</span><span>${format(new Date(sale.sale_date), 'dd/MM/yyyy HH:mm', { locale: fr })}</span></div>
+${meta ? `<dl class="meta">${meta}</dl>` : ''}
+${lines.length ? `<div class="lines">${lines.map(renderLine).join('')}</div>` : ''}
+${discount > 0 ? `<div class="sums"><div class="row"><span>Sous-total</span><span class="amount">${formatCurrency(subtotal)}</span></div>
+<div class="row"><span class="name">Remise · ${escapeHtml(String(sale.promotion_label))}</span><span class="amount">-${formatCurrency(discount)}</span></div></div>` : ''}
+<div class="total"><span>TOTAL</span><span>${formatCurrency(total)}</span></div>
+<img class="qr" src="${escapeHtml(qrCode)}" alt="" onerror="this.remove()">
+<div class="thanks">Merci pour votre visite !<br>À très bientôt</div>
 </div></body></html>`
 }
 
