@@ -2,6 +2,7 @@ import ShopConfigLayout from '@/layouts/app/shop-config-layout';
 import { Form, Head, router } from '@inertiajs/react';
 import type { Service, ServicePageProps } from '@/types/service';
 import { Button } from '@/components/ui/button';
+import { formatCurrency } from '@/lib/thermal-ticket';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
@@ -44,7 +45,7 @@ export default function ServicesIndex({ services, shop }: ServicePageProps) {
               {services.data.map((s: Service) => (
                 <TableRow key={s.id}>
                   <TableCell className="py-2 font-medium">{s.name}</TableCell>
-                  <TableCell className="py-2">{Number(s.price).toFixed(2)}</TableCell>
+                  <TableCell className="py-2">{formatCurrency(Number(s.price))}</TableCell>
                   <TableCell className="py-2">{s.quantity}</TableCell>
                   <TableCell className="py-2">{s.description ?? '—'}</TableCell>
                   <TableCell className="py-2 text-right">
@@ -151,7 +152,7 @@ function ServiceFormModal({
         <Form
           action={action}
           method={method as 'post' | 'put'}
-          preserveScroll
+          options={{ preserveScroll: true }}
           onSuccess={() => {
             onOpenChange(false);
             toast.success(isEdit ? 'Modification réussie' : 'Création réussie', {

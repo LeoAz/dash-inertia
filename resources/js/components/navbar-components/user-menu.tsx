@@ -38,7 +38,7 @@ export default function UserMenu() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="h-8 px-2 hover:bg-transparent data-[state=open]:bg-accent"
+          className="h-10 px-1.5 hover:bg-transparent data-[state=open]:bg-accent"
         >
           <div className="flex items-center gap-2">
             <Avatar>

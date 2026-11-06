@@ -80,7 +80,7 @@ export default function ShopDashboard({ shop, filters, revenue_by_day, by_produc
     to: filters.date_to ? new Date(filters.date_to) : undefined,
   })
 
-  const title: ReactNode = 'Dashboard — Vue d\'ensemble'
+  const title: ReactNode = 'Tableau de bord'
 
   const query = useMemo(() => {
     const q: Record<string, string> = {}
@@ -91,7 +91,7 @@ export default function ShopDashboard({ shop, filters, revenue_by_day, by_produc
 
   const apply = () => {
     const url = `/shops/${shop.id}/dashboard`
-    router.visit(url, { queryStringArrayFormat: 'indices', data: {}, only: undefined, method: 'get', preserveScroll: true, preserveState: true, headers: undefined, onStart: undefined, onProgress: undefined, onFinish: undefined, onSuccess: undefined, onError: undefined, replace: false, forceFormData: false, query })
+    router.visit(url, { queryStringArrayFormat: 'indices', data: query, only: undefined, method: 'get', preserveScroll: true, preserveState: true, headers: undefined, onStart: undefined, onProgress: undefined, onFinish: undefined, onSuccess: undefined, onError: undefined, replace: false, forceFormData: false })
   }
 
   const clear = () => {
@@ -167,7 +167,7 @@ export default function ShopDashboard({ shop, filters, revenue_by_day, by_produc
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
                 <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
                 <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={80} tickLine={false} axisLine={false} tickMargin={8} />
-                <ChartTooltip content={<ChartTooltipContent labelFormatter={(l) => `Date: ${l}`} formatter={(value: number) => formatMoney(value)} />} />
+                <ChartTooltip content={<ChartTooltipContent labelFormatter={(l) => `Date: ${l}`} formatter={(value) => formatMoney(Number(value))} />} />
                 <Area
                   type="monotone"
                   dataKey="total_amount"
@@ -192,7 +192,7 @@ export default function ShopDashboard({ shop, filters, revenue_by_day, by_produc
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} interval={0} angle={-30} height={60} textAnchor="end" />
                 <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} tickLine={false} axisLine={false} tickMargin={8} />
-                <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatMoney(value)} />} />
+                <ChartTooltip content={<ChartTooltipContent formatter={(value) => formatMoney(Number(value))} />} />
                 <Bar dataKey="amount" fill="var(--color-product)" radius={4} />
               </BarChart>
             </ChartContainer>
@@ -210,7 +210,7 @@ export default function ShopDashboard({ shop, filters, revenue_by_day, by_produc
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} interval={0} angle={-30} height={60} textAnchor="end" />
                 <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} tickLine={false} axisLine={false} tickMargin={8} />
-                <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatMoney(value)} />} />
+                <ChartTooltip content={<ChartTooltipContent formatter={(value) => formatMoney(Number(value))} />} />
                 <Bar dataKey="amount" fill="var(--color-client)" radius={4} />
               </BarChart>
             </ChartContainer>
@@ -228,7 +228,7 @@ export default function ShopDashboard({ shop, filters, revenue_by_day, by_produc
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} interval={0} angle={-30} height={60} textAnchor="end" />
                 <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} tickLine={false} axisLine={false} tickMargin={8} />
-                <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatMoney(value)} />} />
+                <ChartTooltip content={<ChartTooltipContent formatter={(value) => formatMoney(Number(value))} />} />
                 <Bar dataKey="amount" fill="var(--color-service)" radius={4} />
               </BarChart>
             </ChartContainer>
@@ -246,7 +246,7 @@ export default function ShopDashboard({ shop, filters, revenue_by_day, by_produc
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} interval={0} angle={-30} height={60} textAnchor="end" />
                 <YAxis tickFormatter={(v: number) => formatMoney(v).replace(' F CFA', '')} width={70} tickLine={false} axisLine={false} tickMargin={8} />
-                <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatMoney(value)} />} />
+                <ChartTooltip content={<ChartTooltipContent formatter={(value) => formatMoney(Number(value))} />} />
                 <Bar dataKey="amount" fill="var(--color-hairdresser)" radius={4} />
               </BarChart>
             </ChartContainer>

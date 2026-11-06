@@ -109,6 +109,8 @@ class SaleController extends Controller
             'shop' => [
                 'id' => $shop->id,
                 'name' => $shop->name,
+                'phone' => $shop->phone,
+                'address' => $shop->address,
             ],
         ]);
     }
@@ -137,6 +139,7 @@ class SaleController extends Controller
             ])->values()->all(),
             'services' => $sale->services->map(fn ($s) => [
                 'service_id' => (int) $s->id,
+                'quantity' => (int) ($s->pivot->quantity ?? 1),
             ])->values()->all(),
         ];
 
@@ -338,6 +341,8 @@ class SaleController extends Controller
             'shop' => [
                 'id' => $shop->id,
                 'name' => $shop->name,
+                'phone' => $shop->phone,
+                'address' => $shop->address,
             ],
             'can_filter_by_date' => $isUserAdmin,
             // Data sources for selects in the create/edit form
@@ -567,6 +572,10 @@ class SaleController extends Controller
                 $receipt->generated_at = now();
                 $receipt->save();
             }
+
+            // Le reçu imprimé juste après la vente doit porter les données réelles enregistrées.
+            $sale->load(['hairdresser:id,name', 'receipt', 'promotion', 'products', 'services']);
+            Inertia::flash('created_sale', (new SaleResource($sale))->resolve());
 
             return redirect()
                 ->route('shops.sales.index', $shop)

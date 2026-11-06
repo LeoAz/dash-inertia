@@ -14,7 +14,7 @@ export default function HomeMenu() {
   const name = props.auth?.user?.name ?? ''
 
   return (
-    <AppHeaderLayout contentFullWidth contentClassName="px-18 sm:px-20 md:px-24 lg:px-28 mt-5">
+    <AppHeaderLayout>
       <Head title="Accueil" />
 
       <section className="mx-auto max-w-7xl">

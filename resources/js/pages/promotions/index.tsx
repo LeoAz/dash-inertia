@@ -201,7 +201,7 @@ function PromotionFormModal({
         <Form
           action={action}
           method={method as 'post' | 'put'}
-          preserveScroll
+          options={{ preserveScroll: true }}
           onSuccess={() => {
             onOpenChange(false);
             toast.success(isEdit ? 'Modification réussie' : 'Création réussie', {

@@ -1,14 +1,13 @@
 import { SidebarInset } from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
 import * as React from 'react';
 
 interface AppContentProps extends React.ComponentProps<'main'> {
     variant?: 'header' | 'sidebar';
-    fullWidth?: boolean;
 }
 
 export function AppContent({
     variant = 'header',
-    fullWidth = false,
     children,
     className,
     ...props
@@ -17,13 +16,9 @@ export function AppContent({
         return <SidebarInset {...props}>{children}</SidebarInset>;
     }
 
-    const base = 'flex h-full w-full flex-1 flex-col gap-4';
-    const width = fullWidth ? 'max-w-none' : 'mx-auto max-w-7xl';
-    const radius = fullWidth ? '' : 'rounded-xl';
-
     return (
         <main
-            className={[base, width, radius, className].filter(Boolean).join(' ')}
+            className={cn('mx-auto flex w-full max-w-screen-2xl flex-1 flex-col gap-4 px-4 py-4 md:px-6 md:py-5 lg:px-8', className)}
             {...props}
         >
             {children}

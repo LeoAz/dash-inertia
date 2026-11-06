@@ -209,7 +209,7 @@ function UserFormModal({ mode, open, onOpenChange, roles, shops, user }: { mode:
         <Form
           action={action}
           method={method as 'post' | 'put'}
-          preserveScroll
+          options={{ preserveScroll: true }}
           onSuccess={() => {
             onOpenChange(false)
             toast.success(isEdit ? 'Modification réussie' : 'Création réussie', { description: isEdit ? 'Utilisateur mis à jour.' : 'Utilisateur créé avec succès.' })
