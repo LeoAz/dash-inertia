@@ -6,15 +6,15 @@ import type { SaleRow } from '@/types/sale'
 /**
  * Impression des reçus sur rouleau thermique 80 mm (Xprinter P810, 203 dpi).
  *
- * Largeur : la tête n'imprime que 72 mm (576 points), et la zone imprimable démarre au bord gauche de la
- * page. Le contenu tient donc sur 68 mm, décalé de 2 mm : au-delà de 72 mm, le bord droit serait coupé.
+ * Largeur : sur Android, le service ESCPrint annonce une page de 80 mm mais coupe tout ce qui dépasse
+ * environ 63 mm à l'impression, sans que l'aperçu le montre. Le contenu s'arrête donc à 60 mm.
  *
  * Hauteur : aucune taille de page n'est déclarée. Une page plus petite que le papier du pilote peut être
  * centrée sur la feuille, ce qui crée de grandes marges en haut et en bas. Sans `size`, le ticket démarre
- * en haut du papier choisi, et le format rouleau du pilote s'arrête à la fin du contenu.
+ * en haut du papier choisi.
  */
-const CONTENT_WIDTH_MM = 68
-const CONTENT_LEFT_MM = 2
+const MAX_CONTENT_WIDTH_MM = 58
+const SIDE_MARGIN_MM = 2
 const IMAGE_TIMEOUT_MS = 1500
 /** `afterprint` n'est pas émis partout (iOS) : l'iframe est retirée au plus tard après ce délai. */
 const CLEANUP_TIMEOUT_MS = 60_000
@@ -61,7 +61,7 @@ function renderLine(line: TicketLine): string {
 /**
  * Design du reçu. La tête thermique ne sait imprimer que du noir pur : le gris est tramé et paraît pâle.
  * Tout est donc en graisse maximale, renforcé d'un fin contour, et le logo est forcé en noir et blanc.
- * La hiérarchie repose sur la taille, les filets et le bandeau inversé du total.
+ * Aucun aplat noir : la tête le rend gris et tramé. La hiérarchie repose sur la taille et les filets.
  * La pile de polices couvre les postes de caisse Windows (Consolas), macOS/iPadOS (Menlo) et Android.
  */
 const TICKET_CSS = `
@@ -69,7 +69,7 @@ const TICKET_CSS = `
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{background:#fff;color:#000}
 body{font:800 12px/1.3 ui-monospace,Menlo,Consolas,'DejaVu Sans Mono','Liberation Mono','Courier New',monospace;-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-text-stroke:.2px #000}
-.ticket{width:${CONTENT_WIDTH_MM}mm;margin-left:${CONTENT_LEFT_MM}mm;padding-bottom:1mm}
+.ticket{max-width:${MAX_CONTENT_WIDTH_MM}mm;margin:0 ${SIDE_MARGIN_MM}mm;padding-bottom:1mm}
 .brand{text-align:center}
 .logo{display:block;height:15mm;width:auto;margin:0 auto 1mm;filter:grayscale(1) brightness(.8) contrast(12)}
 .contact{font-size:11px}
@@ -84,7 +84,7 @@ body{font:800 12px/1.3 ui-monospace,Menlo,Consolas,'DejaVu Sans Mono','Liberatio
 .name small{display:block;font-size:11px}
 .amount{flex:none;font-variant-numeric:tabular-nums}
 .sums{margin-top:1mm;border-top:1.5px dashed #000}
-.total{display:flex;justify-content:space-between;align-items:center;margin-top:1.5mm;padding:1.5mm 2.5mm;background:#000;color:#fff;-webkit-text-stroke:.2px #fff;white-space:nowrap}
+.total{display:flex;justify-content:space-between;align-items:center;margin-top:1.5mm;padding:1.5mm 0;border-top:2px solid #000;border-bottom:2px solid #000;white-space:nowrap}
 .total span:first-child{font-size:12px;letter-spacing:1.5px}
 .total span:last-child{font-size:16px;font-variant-numeric:tabular-nums}
 .qr{display:block;width:22mm;height:22mm;margin:2.5mm auto 1.5mm}
