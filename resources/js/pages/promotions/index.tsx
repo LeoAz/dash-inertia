@@ -214,7 +214,6 @@ function PromotionFormModal({
             });
           }}
           className="flex flex-col gap-4"
-          defaults={defaults}
         >
           {({ errors, processing }) => (
             <>

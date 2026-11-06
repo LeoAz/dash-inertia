@@ -1,7 +1,7 @@
 <?php
 
 it('includes the configured SVG favicon links in the base layout', function (): void {
-    $response = $this->get('/');
+    $response = $this->get(route('login'));
 
     $response->assertSuccessful();
 

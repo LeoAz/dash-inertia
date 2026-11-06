@@ -68,6 +68,7 @@ it('updates with percentage only (amount omitted) sets amount to 0', function ()
 use App\Models\Promotion;
 use App\Models\Shop;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 function actingAsUserWithShop(): array
 {
@@ -76,6 +77,7 @@ function actingAsUserWithShop(): array
     /** @var Shop $shop */
     $shop = Shop::factory()->create();
     $user->shops()->attach($shop->id);
+    $user->assignRole(Role::findOrCreate('admin'));
 
     return [$user, $shop];
 }

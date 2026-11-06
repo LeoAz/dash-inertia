@@ -162,11 +162,6 @@ function HairdresserFormModal({
             });
           }}
           className="flex flex-col gap-4"
-          defaults={isEdit ? {
-            name: (hairdresser as Hairdresser).name,
-            phone: (hairdresser as Hairdresser).phone ?? '',
-            hire_date: (hairdresser as Hairdresser).hire_date ?? '',
-          } : undefined}
         >
           {({ errors, processing }) => (
             <>

@@ -3,12 +3,14 @@
 use App\Models\Hairdresser;
 use App\Models\Shop;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 function actingInShop(): array
 {
     $user = User::factory()->create();
     $shop = Shop::factory()->create();
     $user->shops()->attach($shop->id);
+    $user->assignRole(Role::findOrCreate('admin'));
 
     return [$user, $shop];
 }

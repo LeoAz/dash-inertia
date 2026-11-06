@@ -218,12 +218,6 @@ function UserFormModal({ mode, open, onOpenChange, roles, shops, user }: { mode:
             toast.error('Erreur', { description: isEdit ? 'Impossible de mettre à jour l\'utilisateur.' : 'Impossible de créer l\'utilisateur.' })
           }}
           className="flex flex-col gap-4"
-          defaults={isEdit ? {
-            name: (user as AdminUser).name,
-            username: (user as AdminUser).username ?? '',
-            email: (user as AdminUser).email,
-            role: initialRole,
-          } : undefined}
         >
           {({ errors, processing }) => (
             <>

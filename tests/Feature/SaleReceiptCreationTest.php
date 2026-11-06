@@ -19,11 +19,12 @@ it('creates a receipt with a receipt_number when storing a sale', function () {
         'customer_name' => 'Test Client',
         'customer_phone' => '01010101',
         'sale_date' => Carbon::today()->toDateString(),
+        'payment_method' => 'caisse',
         'products' => [
             ['product_id' => $product->id, 'quantity' => 1],
         ],
         'services' => [
-            ['service_id' => $service->id],
+            ['service_id' => $service->id, 'quantity' => 1],
         ],
     ];
 

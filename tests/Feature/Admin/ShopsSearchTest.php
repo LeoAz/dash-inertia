@@ -2,9 +2,11 @@
 
 use App\Models\Shop;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 it('filters shops by the search query', function () {
     $user = User::factory()->create();
+    $user->assignRole(Role::findOrCreate('Super admin'));
 
     Shop::factory()->create(['name' => 'Alpha Market']);
     Shop::factory()->create(['name' => 'Beta Store']);

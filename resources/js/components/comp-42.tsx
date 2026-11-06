@@ -1,5 +1,5 @@
 import { CalendarIcon } from 'lucide-react'
-import { Button, DateRangePicker, Dialog, Group, Label, Popover } from 'react-aria-components'
+import { Button, DateRangePicker, Dialog, Group, I18nProvider, Label, Popover } from 'react-aria-components'
 import type { DateValue } from '@internationalized/date'
 import { getLocalTimeZone, parseDate } from '@internationalized/date'
 import { format as formatDate } from 'date-fns'
@@ -35,13 +35,13 @@ export default function Component({
     // Map JS Dates to React Aria DateValue range when controlled
   const start = toDateValue(value?.from)
   const end = toDateValue(value?.to)
-  const racValue = start || end ? { start, end } : undefined
+  const racValue = start && end ? { start, end } : undefined
 
   return (
+    <I18nProvider locale="fr-FR">
     <DateRangePicker
       className={cn('*:not-first:mt-2', className)}
-      locale="fr-FR"
-      value={racValue as { start?: DateValue; end?: DateValue } | undefined}
+      value={racValue}
       onChange={(range: { start?: DateValue | null; end?: DateValue | null } | null) => {
         if (!onChange) return
         if (!range) {
@@ -69,9 +69,10 @@ export default function Component({
         offset={4}
       >
         <Dialog className="max-h-[inherit] overflow-auto p-2">
-          <RangeCalendar locale="fr-FR" />
+          <RangeCalendar />
         </Dialog>
       </Popover>
     </DateRangePicker>
+    </I18nProvider>
   )
 }

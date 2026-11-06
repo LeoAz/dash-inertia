@@ -19,7 +19,7 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('shops.dashboard', ['shop' => $user->shops()->orderBy('shops.id')->first()], absolute: false));
 });
 
 test('users can not authenticate with invalid password', function () {

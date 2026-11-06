@@ -165,17 +165,6 @@ function ServiceFormModal({
             });
           }}
           className="flex flex-col gap-4"
-          defaults={isEdit ? {
-            name: (service as Service).name,
-            price: (service as Service).price,
-            quantity: (service as Service).quantity,
-            description: (service as Service).description ?? '',
-          } : {
-            name: '',
-            price: '',
-            quantity: 1,
-            description: '',
-          }}
         >
           {({ errors, processing }) => (
             <>

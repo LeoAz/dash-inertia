@@ -2,9 +2,11 @@
 
 use App\Models\Shop;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 it('displays the shops index', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
+    $user->assignRole(Role::findOrCreate('Super admin'));
 
     $this->actingAs($user);
 
@@ -75,6 +77,7 @@ it('updates a shop and redirects', function () {
 
 it('deletes a shop and redirects', function () {
     $user = User::factory()->create();
+    $user->assignRole(Role::findOrCreate('Super admin'));
     $shop = Shop::factory()->create();
 
     $this->actingAs($user);

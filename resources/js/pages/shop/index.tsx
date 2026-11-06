@@ -171,12 +171,6 @@ function ShopFormModal({ mode, open, onOpenChange, shop }: { mode: 'create' | 'e
             toast.error('Erreur', { description: isEdit ? 'Impossible de mettre à jour la boutique.' : 'Impossible de créer la boutique.' })
           }}
           className="flex flex-col gap-4"
-          defaults={isEdit ? {
-            name: (shop as Shop).name,
-            address: (shop as Shop).address ?? '',
-            phone: (shop as Shop).phone ?? '',
-            email: (shop as Shop).email ?? '',
-          } : undefined}
         >
           {({ errors, processing }) => (
             <>

@@ -149,7 +149,7 @@ it('throws when no eligible items per applicability flags', function () {
         ->toThrow(ValidationException::class);
 });
 
-it('explicitly selected promotion with days_of_week mismatch is not applied', function () {
+it('rejects an explicitly selected promotion with days_of_week mismatch', function () {
     $shop = makeShop();
     // Wednesday 2025-01-15 (3)
     $sale = makeSale($shop, '2025-01-15', 100.00);
@@ -167,7 +167,7 @@ it('explicitly selected promotion with days_of_week mismatch is not applied', fu
         'applicable_to_services' => false,
     ]);
 
-    $sale->applyPromotion($promo);
+    expect(fn () => $sale->applyPromotion($promo))->toThrow(ValidationException::class);
 
     expect($sale->promotion_id)->toBeNull();
     expect($sale->discount_amount)->toBeNull();

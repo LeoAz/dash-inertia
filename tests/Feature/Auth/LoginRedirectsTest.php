@@ -63,7 +63,7 @@ it('redirects vendeur to first shop sales index after login', function () {
     $response->assertRedirect(route('shops.sales.index', ['shop' => $shopA->id], absolute: false));
 });
 
-it('prevents vendeur without shop from logging in and shows an error', function () {
+it('sends a vendeur without shop to the no-shop page', function () {
     Role::findOrCreate('vendeur');
 
     $user = User::factory()->create([
@@ -80,8 +80,6 @@ it('prevents vendeur without shop from logging in and shows an error', function 
         'password' => 'password',
     ]);
 
-    // Should redirect back to login with validation errors on username
-    $response->assertRedirect(route('login', absolute: false));
-    $response->assertSessionHasErrors('username');
-    $this->assertGuest();
+    // The no-shop page explains the situation, then logs the vendor out
+    $response->assertRedirect(route('no-shop', absolute: false));
 });
