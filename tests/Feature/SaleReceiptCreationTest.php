@@ -12,7 +12,7 @@ it('creates a receipt with a receipt_number when storing a sale', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
 
-    $product = Product::factory()->for($shop)->create(['price' => 1000]);
+    $product = Product::factory()->for($shop)->create(['price' => 1000, 'quantity' => 100]);
     $service = Service::factory()->for($shop)->create(['price' => 1500]);
 
     $payload = [

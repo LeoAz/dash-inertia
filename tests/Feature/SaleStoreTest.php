@@ -12,8 +12,8 @@ it('stores a sale with products and services and computes totals', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
 
-    $p1 = Product::factory()->for($shop)->create(['price' => 1500]);
-    $p2 = Product::factory()->for($shop)->create(['price' => 1000]);
+    $p1 = Product::factory()->for($shop)->create(['price' => 1500, 'quantity' => 100]);
+    $p2 = Product::factory()->for($shop)->create(['price' => 1000, 'quantity' => 100]);
     $s1 = Service::factory()->for($shop)->create(['price' => 2000]);
 
     $payload = [
@@ -72,7 +72,7 @@ it('applies percentage promotion to eligible items', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
 
-    $p1 = Product::factory()->for($shop)->create(['price' => 1000]);
+    $p1 = Product::factory()->for($shop)->create(['price' => 1000, 'quantity' => 100]);
     $s1 = Service::factory()->for($shop)->create(['price' => 3000]);
 
     // 10% only on products
@@ -120,7 +120,7 @@ it('applies fixed amount promotion capped to eligible base', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
 
-    $p1 = Product::factory()->for($shop)->create(['price' => 1200]);
+    $p1 = Product::factory()->for($shop)->create(['price' => 1200, 'quantity' => 100]);
 
     // Fixed 5000 on products & services
     $promo = Promotion::factory()->for($shop)->create([
