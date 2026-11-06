@@ -53,7 +53,7 @@ class DatabaseSeeder extends Seeder
             );
 
             $roleUser->assignRole($role);
-            $roleUser->shops()->syncWithoutDetaching(Shop::query()->pluck('id')->all());
+            $roleUser->shops()->syncWithoutDetaching(Shop::query()->orderBy('id')->limit(2)->pluck('id')->all());
         }
 
         // 4) Seed additional users (factory will attach 1–2 shops automatically)
