@@ -26,8 +26,12 @@ export interface TicketShop {
     address?: string | null
 }
 
+function formatAmount(value: number): string {
+    return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(value).replace(/\s/g, ' ')
+}
+
 export function formatCurrency(value: number): string {
-    return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(value).replace(/\s/g, ' ') + ' F CFA'
+    return `${formatAmount(value)} F CFA`
 }
 
 function escapeHtml(value: string): string {
@@ -46,51 +50,51 @@ export function lineTotal(line: TicketLine): number {
     return Number(line.line_subtotal ?? unit * Number(line.quantity ?? 1))
 }
 
-function renderLine(line: TicketLine): string {
+function renderLine(line: TicketLine, index: number): string {
     const quantity = Number(line.quantity ?? 1)
     const unit = Number(line.unit_price ?? line.price ?? 0)
-    return `<div class="line"><div class="row"><span class="name">${escapeHtml(line.name)}</span><span class="amount">${formatCurrency(lineTotal(line))}</span></div>${
-        quantity > 1 ? `<div class="detail">${quantity} × ${formatCurrency(unit)}</div>` : ''
-    }</div>`
+    return `<div class="cols line"><span>${index + 1}.</span><span class="name">${quantity} × ${escapeHtml(line.name)}${
+        quantity > 1 ? `<small>à ${formatAmount(unit)} l'unité</small>` : ''
+    }</span><span class="amount">${formatAmount(lineTotal(line))}</span></div>`
 }
 
 /**
- * Design du reçu : une colonne centrée en chasse fixe, rythmée par le blanc et de fins filets.
+ * Design du reçu : en-tête centré, informations sur deux colonnes, tableau numéroté et total encadré.
  * La tête thermique ne sait imprimer que du noir pur (le gris est tramé et devient illisible) et les
- * polices mono fines s'y effacent : la hiérarchie repose donc sur la graisse, la casse et l'interlettrage.
+ * polices mono fines s'y effacent : la hiérarchie repose donc sur la graisse, la casse et les filets.
  * La pile de polices couvre les postes de caisse Windows (Consolas), macOS/iPadOS (Menlo) et Android.
  */
 const TICKET_CSS = `
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{background:#fff;color:#000}
-body{width:${PAPER_WIDTH_MM}mm;font:600 12px/1.4 ui-monospace,Menlo,Consolas,'DejaVu Sans Mono','Liberation Mono','Courier New',monospace;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{width:${PAPER_WIDTH_MM}mm;font:600 11.5px/1.4 ui-monospace,Menlo,Consolas,'DejaVu Sans Mono','Liberation Mono','Courier New',monospace;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .ticket{width:${PRINTABLE_WIDTH_MM}mm;margin:0 auto;padding:1mm 0 3mm}
-.head{text-align:center}
+.head{padding-bottom:2.5mm;text-align:center}
 .logo{display:block;height:17mm;width:auto;margin:0 auto 2mm}
-.shop{font-size:14px;font-weight:800;letter-spacing:3px;text-transform:uppercase}
-.contact{margin-top:.5mm;font-size:10.5px;letter-spacing:.3px}
-.block{margin-top:3mm;padding-top:3mm;border-top:1px dashed #000}
-.row{display:flex;justify-content:space-between;align-items:baseline;gap:4mm}
-.meta .row+.row{margin-top:.8mm}
-.label{flex:none;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase}
-.value{min-width:0;text-align:right;font-weight:700;overflow-wrap:anywhere}
+.shop{font-size:14px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase}
+.contact{margin-top:.5mm;font-size:10.5px}
+.block{padding:2.5mm 0;border-top:1px dashed #000}
+.meta{display:grid;grid-template-columns:1fr auto;gap:.8mm 3mm;font-size:10.5px}
+.meta div:nth-child(n+3){grid-column:1/-1}
+.meta div{overflow-wrap:anywhere}
+.meta b{font-weight:800}
+.cols{display:grid;grid-template-columns:6mm 1fr auto;gap:2mm;align-items:baseline}
+.heading{padding:1.5mm 0;border-top:1px dashed #000;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
 .line+.line{margin-top:1.5mm}
-.name{min-width:0;font-weight:700;overflow-wrap:anywhere}
-.amount{flex:none;font-variant-numeric:tabular-nums}
-.detail{margin-top:.3mm;font-size:10.5px}
-.sums .row+.row{margin-top:.8mm}
-.total{margin-top:3mm;padding:2mm 0;border-top:2px solid #000;border-bottom:2px solid #000;font-weight:800}
-.total .label{font-size:12px;font-weight:800;letter-spacing:4px}
-.total .amount{font-size:17px}
-.foot{margin-top:3.5mm;text-align:center}
-.qr{display:block;width:22mm;height:22mm;margin:0 auto 2mm}
-.thanks{font-size:11px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase}
+.name{min-width:0;font-weight:800;overflow-wrap:anywhere}
+.name small{display:block;font-size:10.5px;font-weight:600}
+.amount{font-variant-numeric:tabular-nums;text-align:right}
+.sums{padding-left:8mm}
+.row{display:flex;justify-content:space-between;align-items:center;gap:3mm}
+.row+.row{margin-top:1mm}
+.total{margin-top:2mm;font-size:13px;font-weight:800}
+.sums .total:first-child{margin-top:0}
+.box{padding:1mm 2.5mm;border:2px solid #000;font-size:15px;font-variant-numeric:tabular-nums}
+.foot{text-align:center}
+.qr{display:block;width:22mm;height:22mm;margin:0 auto 2.5mm}
+.thanks{font-size:11px;font-weight:800}
 .bye{margin-top:.5mm;font-size:10.5px}
 `
-
-function metaRow(label: string, value: string): string {
-    return `<div class="row"><span class="label">${label}</span><span class="value">${escapeHtml(value)}</span></div>`
-}
 
 export function buildTicketHtml(sale: SaleRow, shop: TicketShop | undefined, origin = ''): string {
     const details = sale.details ?? []
@@ -102,31 +106,36 @@ export function buildTicketHtml(sale: SaleRow, shop: TicketShop | undefined, ori
     const logo = shop?.logo_url || `${origin}/img/logo%201.png`
     const qrCode = `${origin}${qr.url({ shop: Number(sale.shop_id), sale: Number(sale.id) })}`
     const payment = sale.payment_method === 'orange_money' ? 'Orange Money' : sale.payment_method === 'caisse' ? 'Caisse' : null
+    const saleDate = new Date(sale.sale_date)
 
     const meta = [
-        ['Reçu', receipt],
-        ['Date', format(new Date(sale.sale_date), 'dd/MM/yyyy HH:mm', { locale: fr })],
+        ['Date', format(saleDate, 'dd/MM/yyyy', { locale: fr })],
+        ['Heure', format(saleDate, 'HH:mm', { locale: fr })],
         ['Client', sale.customer_name],
         ['Coiffeur', sale.hairdresser_name],
         ['Paiement', payment],
     ]
         .filter((entry): entry is [string, string] => Boolean(entry[1]))
-        .map(([label, value]) => metaRow(label, value))
+        .map(([label, value]) => `<div>${label} : <b>${escapeHtml(value)}</b></div>`)
         .join('')
 
-    const contact = [shop?.phone, shop?.address].filter(Boolean).map((v) => `<div class="contact">${escapeHtml(String(v))}</div>`).join('')
+    const contact = [shop?.address, shop?.phone ? `Tél : ${shop.phone}` : null]
+        .filter(Boolean)
+        .map((v) => `<div class="contact">${escapeHtml(String(v))}</div>`)
+        .join('')
 
     return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Reçu ${escapeHtml(receipt)}</title>
 <style>${TICKET_CSS}</style><style id="page-size"></style></head><body><div class="ticket">
 <div class="head"><img class="logo" src="${escapeHtml(logo)}" alt="" onerror="this.remove()">
 ${shop?.name ? `<div class="shop">${escapeHtml(shop.name)}</div>` : ''}${contact}</div>
-<div class="block meta">${meta}</div>
-${lines.length ? `<div class="block">${lines.map(renderLine).join('')}</div>` : ''}
-${discount > 0 ? `<div class="block sums"><div class="row"><span class="label">Sous-total</span><span class="amount">${formatCurrency(subtotal)}</span></div>
-<div class="row"><span class="label">Remise</span><span class="amount">-${formatCurrency(discount)}</span></div></div>` : ''}
-<div class="total row"><span class="label">TOTAL</span><span class="amount">${formatCurrency(total)}</span></div>
-<div class="foot"><img class="qr" src="${escapeHtml(qrCode)}" alt="" onerror="this.remove()">
-<div class="thanks">Merci de votre visite</div><div class="bye">À très bientôt</div></div>
+<div class="block meta">${meta}<div>Reçu n° : <b>${escapeHtml(receipt)}</b></div></div>
+${lines.length ? `<div class="cols heading"><span>N°</span><span>Désignation</span><span>F CFA</span></div>
+<div class="block">${lines.map(renderLine).join('')}</div>` : ''}
+<div class="block sums">${discount > 0 ? `<div class="row"><span>Sous-total</span><span class="amount">${formatAmount(subtotal)}</span></div>
+<div class="row"><span>Remise</span><span class="amount">-${formatAmount(discount)}</span></div>` : ''}
+<div class="row total"><span>Total :</span><span class="box">${formatCurrency(total)}</span></div></div>
+<div class="block foot"><img class="qr" src="${escapeHtml(qrCode)}" alt="" onerror="this.remove()">
+<div class="thanks">Merci pour votre visite !</div><div class="bye">À très bientôt</div></div>
 </div></body></html>`
 }
 
