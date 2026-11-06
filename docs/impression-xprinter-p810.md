@@ -1,6 +1,6 @@
 # Impression des reçus — Xprinter P810 (rouleau 80 mm)
 
-L'application calcule la hauteur exacte de chaque reçu : le poste d'impression ne doit pas imposer une longueur de page fixe.
+Le ticket tient sur 68 mm de large, dans les 72 mm imprimables de la P810, et démarre en haut du papier. C'est le format de papier du pilote qui décide où le ticket s'arrête : il doit donc être réglé sur le rouleau.
 
 ## À régler une seule fois
 
@@ -18,7 +18,11 @@ L'application calcule la hauteur exacte de chaque reçu : le poste d'impression 
 
 ## Si le papier continue de défiler après le reçu
 
-Chrome peut garder le format choisi dans le pilote. La longueur vient alors du format sélectionné : vérifier qu'il s'agit bien du rouleau, que l'option d'avance papier en fin de document est désactivée, et que le pilote est à jour.
+La longueur vient du format sélectionné. Vérifier dans la fenêtre d'impression de Chrome que le format est bien le rouleau, et non A4, Lettre ou 80 × 297 mm, puis que l'option d'avance papier en fin de document est désactivée dans le pilote.
+
+## Si le bord droit du ticket est coupé
+
+Vérifier que l'échelle est à 100 % et que les marges sont sur Aucune.
 
 ## Impression sans dialogue (poste de caisse Windows)
 
