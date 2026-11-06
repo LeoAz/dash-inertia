@@ -2,10 +2,7 @@
 
 use App\Models\Shop;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
-
-uses(RefreshDatabase::class);
 
 function makeUserWithRole(string $roleName, bool $attachShop = false, ?Shop $shop = null): User
 {

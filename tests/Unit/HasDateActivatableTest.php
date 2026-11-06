@@ -2,9 +2,6 @@
 
 use App\Models\Promotion;
 use Illuminate\Support\Carbon;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 it('promotion: returns false when inactive', function () {
     $date = Carbon::parse('2025-01-15');

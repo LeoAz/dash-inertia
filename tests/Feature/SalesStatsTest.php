@@ -3,11 +3,8 @@
 use App\Models\Sale;
 use App\Models\Shop;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
-
-uses(RefreshDatabase::class);
 
 it('includes payment method breakdown in daily stats', function () {
     $shop = Shop::factory()->create();

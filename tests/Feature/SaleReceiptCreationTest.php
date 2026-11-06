@@ -5,10 +5,7 @@ use App\Models\Sale;
 use App\Models\Service;
 use App\Models\Shop;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
-
-uses(RefreshDatabase::class);
 
 it('creates a receipt with a receipt_number when storing a sale', function () {
     $shop = Shop::factory()->create();

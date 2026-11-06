@@ -2,10 +2,7 @@
 
 use App\Models\User;
 use Database\Seeders\RolesSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
-
-uses(RefreshDatabase::class);
 
 it('seeds three roles and assigns Super admin to the first user', function () {
     // Create two users; the first created should receive the Super admin role

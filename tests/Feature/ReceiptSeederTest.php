@@ -10,9 +10,6 @@ use Database\Seeders\ReceiptSeeder;
 use Database\Seeders\SaleSeeder;
 use Database\Seeders\ServiceSeeder;
 use Database\Seeders\ShopSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 it('creates receipts for existing sales when running ReceiptSeeder', function () {
     // Prepare shops, catalog, promotions, and sales

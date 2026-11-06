@@ -2,9 +2,6 @@
 
 use App\Models\Promotion;
 use Illuminate\Support\Carbon;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 it('returns false when promotion is inactive', function () {
     $promo = new Promotion;

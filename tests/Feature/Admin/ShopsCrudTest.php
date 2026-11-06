@@ -2,9 +2,6 @@
 
 use App\Models\Shop;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 it('displays the shops index', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);

@@ -2,9 +2,6 @@
 
 use App\Models\Shop;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 it('filters shops by the search query', function () {
     $user = User::factory()->create();
