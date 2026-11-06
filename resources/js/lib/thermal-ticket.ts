@@ -19,8 +19,8 @@ const SIDE_MARGIN_MM = 2
 /** Retrait des textes à droite : la coupure observée se situe vers 55 mm, pour un contenu de 60 mm. */
 const TEXT_RIGHT_INSET_MM = 8
 const IMAGE_TIMEOUT_MS = 1500
-/** `afterprint` n'est pas émis partout (iOS) : l'iframe est retirée au plus tard après ce délai. */
-const CLEANUP_TIMEOUT_MS = 60_000
+const PRINT_ROOT_ID = 'thermal-ticket-print'
+const PRINT_STYLE_ID = 'thermal-ticket-print-style'
 
 export interface TicketShop {
     name?: string | null
@@ -130,8 +130,8 @@ ${discount > 0 ? `<div class="sums"><div class="row"><span>Sous-total</span><spa
 </div></body></html>`
 }
 
-async function waitForImages(doc: Document): Promise<void> {
-    const pending = Array.from(doc.images)
+async function waitForImages(root: HTMLElement): Promise<void> {
+    const pending = Array.from(root.querySelectorAll('img'))
         .filter((image) => !image.complete)
         .map((image) => new Promise((resolve) => {
             image.addEventListener('load', resolve, { once: true })
@@ -140,41 +140,41 @@ async function waitForImages(doc: Document): Promise<void> {
     await Promise.race([Promise.all(pending), new Promise((resolve) => setTimeout(resolve, IMAGE_TIMEOUT_MS))])
 }
 
-let activeFrame: HTMLIFrameElement | null = null
+function removePrintedTicket(): void {
+    document.getElementById(PRINT_ROOT_ID)?.remove()
+    document.getElementById(PRINT_STYLE_ID)?.remove()
+}
 
-/** Imprime le ticket dans une iframe hors écran, une fois ses images chargées. */
+/**
+ * Imprime le ticket depuis la page elle-même, en masquant tout le reste à l'impression.
+ *
+ * Pas d'iframe : certains navigateurs Android ignorent `iframe.print()` et impriment la page principale.
+ * Le ticket reste en place, invisible à l'écran, jusqu'au prochain toucher de la page : sur Android, le
+ * rendu peut être refait tant que la fenêtre d'impression est ouverte. Il doit partir ensuite, sinon les
+ * rapports, imprimés depuis la même page, sortiraient comme ce ticket.
+ */
 export async function printThermalTicket(html: string): Promise<void> {
-    activeFrame?.remove()
+    const ticket = new DOMParser().parseFromString(html, 'text/html')
 
-    const frame = document.createElement('iframe')
-    frame.setAttribute('aria-hidden', 'true')
-    frame.style.cssText = 'position:fixed;left:-200mm;top:0;width:80mm;height:10mm;border:0'
-    document.body.appendChild(frame)
-    activeFrame = frame
+    removePrintedTicket()
 
-    const win = frame.contentWindow
-    const doc = frame.contentDocument
-    if (!win || !doc) {
-        frame.remove()
-        return
-    }
+    const style = document.createElement('style')
+    style.id = PRINT_STYLE_ID
+    style.textContent = `@media screen{#${PRINT_ROOT_ID}{display:none}}
+@media print{body>*:not(#${PRINT_ROOT_ID}){display:none!important}
+html,body{height:auto!important;margin:0!important;overflow:visible!important}
+${ticket.querySelector('style')?.textContent ?? ''}}`
 
-    doc.open()
-    doc.write(html)
-    doc.close()
+    const root = document.createElement('div')
+    root.id = PRINT_ROOT_ID
+    root.innerHTML = ticket.body.innerHTML
 
-    await waitForImages(doc)
-    await doc.fonts?.ready
+    document.head.appendChild(style)
+    document.body.appendChild(root)
 
-    const cleanup = () => {
-        frame.remove()
-        if (activeFrame === frame) {
-            activeFrame = null
-        }
-    }
-    win.addEventListener('afterprint', cleanup, { once: true })
-    setTimeout(cleanup, CLEANUP_TIMEOUT_MS)
+    await waitForImages(root)
+    await document.fonts?.ready
 
-    win.focus()
-    win.print()
+    window.print()
+    window.addEventListener('pointerdown', removePrintedTicket, { once: true })
 }
