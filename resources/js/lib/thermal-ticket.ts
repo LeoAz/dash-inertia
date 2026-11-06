@@ -4,17 +4,17 @@ import { qr } from '@/actions/App/Http/Controllers/SaleController'
 import type { SaleRow } from '@/types/sale'
 
 /**
- * Impression des reçus sur rouleau thermique 80 mm (Xprinter P810, 203 dpi, 576 points = 72 mm utiles).
+ * Impression des reçus sur rouleau thermique 80 mm (Xprinter P810, 203 dpi).
  *
- * Sur un rouleau, chaque millimètre de « page » est du papier consommé. La hauteur de la page est donc
- * mesurée sur le contenu réel, puis déclarée à l'impression : jamais de valeur fixe ni de `size: 80mm`
- * seul, que le CSS interprète comme une page carrée de 80 × 80 mm.
+ * Largeur : la tête n'imprime que 72 mm (576 points), et la zone imprimable démarre au bord gauche de la
+ * page. Le contenu tient donc sur 68 mm, décalé de 2 mm : au-delà de 72 mm, le bord droit serait coupé.
+ *
+ * Hauteur : aucune taille de page n'est déclarée. Une page plus petite que le papier du pilote peut être
+ * centrée sur la feuille, ce qui crée de grandes marges en haut et en bas. Sans `size`, le ticket démarre
+ * en haut du papier choisi, et le format rouleau du pilote s'arrête à la fin du contenu.
  */
-const PAPER_WIDTH_MM = 80
-const PRINTABLE_WIDTH_MM = 72
-const MM_PER_CSS_PX = 25.4 / 96
-/** Marge d'arrondi : évite qu'une fraction de pixel ne crée une seconde page. */
-const HEIGHT_SAFETY_MM = 1
+const CONTENT_WIDTH_MM = 68
+const CONTENT_LEFT_MM = 2
 const IMAGE_TIMEOUT_MS = 1500
 /** `afterprint` n'est pas émis partout (iOS) : l'iframe est retirée au plus tard après ce délai. */
 const CLEANUP_TIMEOUT_MS = 60_000
@@ -60,40 +60,40 @@ function renderLine(line: TicketLine, index: number): string {
 
 /**
  * Design du reçu : en-tête centré, informations sur deux colonnes, tableau numéroté et total encadré.
- * La tête thermique ne sait imprimer que du noir pur (le gris est tramé et devient illisible) et les
- * polices mono fines s'y effacent : la hiérarchie repose donc sur la graisse, la casse et les filets.
+ * La tête thermique ne sait imprimer que du noir pur : le gris est tramé et paraît pâle. Tout est donc en
+ * graisse maximale, renforcé d'un fin contour, et le logo est forcé en noir et blanc. La hiérarchie repose
+ * sur la taille, la casse et les filets.
  * La pile de polices couvre les postes de caisse Windows (Consolas), macOS/iPadOS (Menlo) et Android.
  */
 const TICKET_CSS = `
+@page{margin:0}
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{background:#fff;color:#000}
-body{width:${PAPER_WIDTH_MM}mm;font:600 11.5px/1.4 ui-monospace,Menlo,Consolas,'DejaVu Sans Mono','Liberation Mono','Courier New',monospace;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.ticket{width:${PRINTABLE_WIDTH_MM}mm;margin:0 auto;padding:1mm 0 3mm}
+body{font:800 11.5px/1.4 ui-monospace,Menlo,Consolas,'DejaVu Sans Mono','Liberation Mono','Courier New',monospace;-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-text-stroke:.2px #000}
+.ticket{width:${CONTENT_WIDTH_MM}mm;margin-left:${CONTENT_LEFT_MM}mm;padding:1mm 0 3mm}
 .head{padding-bottom:2.5mm;text-align:center}
-.logo{display:block;height:17mm;width:auto;margin:0 auto 2mm}
-.shop{font-size:14px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase}
-.contact{margin-top:.5mm;font-size:10.5px}
-.block{padding:2.5mm 0;border-top:1px dashed #000}
-.meta{display:grid;grid-template-columns:1fr auto;gap:.8mm 3mm;font-size:10.5px}
+.logo{display:block;height:17mm;width:auto;margin:0 auto 2mm;filter:grayscale(1) brightness(.8) contrast(12)}
+.contact{margin-top:.5mm;font-size:11px}
+.block{padding:2.5mm 0;border-top:1.5px dashed #000}
+.meta{display:grid;grid-template-columns:1fr auto;gap:.8mm 3mm;font-size:11px}
 .meta div:nth-child(n+3){grid-column:1/-1}
 .meta div{overflow-wrap:anywhere}
-.meta b{font-weight:800}
 .cols{display:grid;grid-template-columns:6mm 1fr auto;gap:2mm;align-items:baseline}
-.heading{padding:1.5mm 0;border-top:1px dashed #000;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+.heading{padding:1.5mm 0;border-top:1.5px dashed #000;font-size:11px;letter-spacing:1px;text-transform:uppercase}
 .line+.line{margin-top:1.5mm}
-.name{min-width:0;font-weight:800;overflow-wrap:anywhere}
-.name small{display:block;font-size:10.5px;font-weight:600}
+.name{min-width:0;overflow-wrap:anywhere}
+.name small{display:block;font-size:11px}
 .amount{font-variant-numeric:tabular-nums;text-align:right}
 .sums{padding-left:8mm}
 .row{display:flex;justify-content:space-between;align-items:center;gap:3mm}
 .row+.row{margin-top:1mm}
-.total{margin-top:2mm;font-size:13px;font-weight:800}
+.total{margin-top:2mm;font-size:13px;white-space:nowrap}
 .sums .total:first-child{margin-top:0}
 .box{padding:1mm 2.5mm;border:2px solid #000;font-size:15px;font-variant-numeric:tabular-nums}
 .foot{text-align:center}
 .qr{display:block;width:22mm;height:22mm;margin:0 auto 2.5mm}
-.thanks{font-size:11px;font-weight:800}
-.bye{margin-top:.5mm;font-size:10.5px}
+.thanks{font-size:11.5px}
+.bye{margin-top:.5mm;font-size:11px}
 `
 
 export function buildTicketHtml(sale: SaleRow, shop: TicketShop | undefined, origin = ''): string {
@@ -125,9 +125,9 @@ export function buildTicketHtml(sale: SaleRow, shop: TicketShop | undefined, ori
         .join('')
 
     return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Reçu ${escapeHtml(receipt)}</title>
-<style>${TICKET_CSS}</style><style id="page-size"></style></head><body><div class="ticket">
+<style>${TICKET_CSS}</style></head><body><div class="ticket">
 <div class="head"><img class="logo" src="${escapeHtml(logo)}" alt="" onerror="this.remove()">
-${shop?.name ? `<div class="shop">${escapeHtml(shop.name)}</div>` : ''}${contact}</div>
+${contact}</div>
 <div class="block meta">${meta}<div>Reçu n° : <b>${escapeHtml(receipt)}</b></div></div>
 ${lines.length ? `<div class="cols heading"><span>N°</span><span>Désignation</span><span>F CFA</span></div>
 <div class="block">${lines.map(renderLine).join('')}</div>` : ''}
@@ -151,13 +151,13 @@ async function waitForImages(doc: Document): Promise<void> {
 
 let activeFrame: HTMLIFrameElement | null = null
 
-/** Imprime le ticket dans une iframe hors écran, à la hauteur exacte de son contenu. */
+/** Imprime le ticket dans une iframe hors écran, une fois ses images chargées. */
 export async function printThermalTicket(html: string): Promise<void> {
     activeFrame?.remove()
 
     const frame = document.createElement('iframe')
     frame.setAttribute('aria-hidden', 'true')
-    frame.style.cssText = `position:fixed;left:-200mm;top:0;width:${PAPER_WIDTH_MM}mm;height:10mm;border:0`
+    frame.style.cssText = 'position:fixed;left:-200mm;top:0;width:80mm;height:10mm;border:0'
     document.body.appendChild(frame)
     activeFrame = frame
 
@@ -174,13 +174,6 @@ export async function printThermalTicket(html: string): Promise<void> {
 
     await waitForImages(doc)
     await doc.fonts?.ready
-
-    const ticket = doc.querySelector('.ticket')
-    const heightMm = Math.ceil((ticket?.getBoundingClientRect().height ?? 0) * MM_PER_CSS_PX) + HEIGHT_SAFETY_MM
-    const pageSize = doc.getElementById('page-size')
-    if (pageSize) {
-        pageSize.textContent = `@page{size:${PAPER_WIDTH_MM}mm ${heightMm}mm;margin:0}`
-    }
 
     const cleanup = () => {
         frame.remove()
