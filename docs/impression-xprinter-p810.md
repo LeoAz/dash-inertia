@@ -1,6 +1,6 @@
 # Impression des reçus — Xprinter P810 (rouleau 80 mm)
 
-Le ticket s'arrête à 60 mm de large et démarre en haut du papier. Sur Android, le service d'impression coupe ce qui dépasse environ 63 mm, même si l'aperçu ne le montre pas. C'est le format de papier du pilote qui décide où le ticket s'arrête : il doit donc être réglé sur le rouleau.
+Le ticket s'arrête à 60 mm de large, ses textes à 52 mm, et il démarre en haut du papier. C'est le format de papier du pilote qui décide où le ticket s'arrête : il doit donc être réglé sur le rouleau.
 
 ## À régler une seule fois
 
@@ -28,7 +28,12 @@ Une courte bande vide reste normale : c'est la distance entre la tête d'impress
 
 ## Sur Android (ESCPrint Service)
 
-L'aperçu montre une feuille d'environ 80 × 220 mm pour le format `80(80MM)1:1` : cette longueur est imposée par le service d'impression, et le reste de la feuille sort blanc. Vérifier dans la fenêtre d'impression les autres formats proposés, et dans l'application ESCPrint Service les options de papier.
+Dans les réglages de l'imprimante de l'application ESCPrint Service :
+
+- **Print Length** : `110`. C'est la longueur fixe de la feuille : une valeur trop grande sort du papier blanc après le ticket
+- **Transmission Compression** : décochée. Si le ticket sort en caractères incompréhensibles, éteindre l'imprimante, vérifier cette case et réessayer
+
+Le service agrandit le ticket et coupe le bord droit, sans que l'aperçu le montre. Les textes du ticket s'arrêtent donc avant ce bord.
 
 ## Si le bord droit du ticket est coupé
 

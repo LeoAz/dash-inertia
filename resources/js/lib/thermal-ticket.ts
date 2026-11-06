@@ -6,8 +6,9 @@ import type { SaleRow } from '@/types/sale'
 /**
  * Impression des reçus sur rouleau thermique 80 mm (Xprinter P810, 203 dpi).
  *
- * Largeur : sur Android, le service ESCPrint annonce une page de 80 mm mais coupe tout ce qui dépasse
- * environ 63 mm à l'impression, sans que l'aperçu le montre. Le contenu s'arrête donc à 60 mm.
+ * Largeur : sur Android, le service ESCPrint agrandit le ticket et coupe le bord droit, sans que l'aperçu
+ * le montre. Rétrécir le ticket ne suffit pas : l'agrandissement augmente d'autant. Les filets gardent
+ * donc toute la largeur, et les textes s'arrêtent avant le bord droit, là où l'impression coupe.
  *
  * Hauteur : aucune taille de page n'est déclarée. Une page plus petite que le papier du pilote peut être
  * centrée sur la feuille, ce qui crée de grandes marges en haut et en bas. Sans `size`, le ticket démarre
@@ -15,6 +16,8 @@ import type { SaleRow } from '@/types/sale'
  */
 const MAX_CONTENT_WIDTH_MM = 58
 const SIDE_MARGIN_MM = 2
+/** Retrait des textes à droite : la coupure observée se situe vers 55 mm, pour un contenu de 60 mm. */
+const TEXT_RIGHT_INSET_MM = 8
 const IMAGE_TIMEOUT_MS = 1500
 /** `afterprint` n'est pas émis partout (iOS) : l'iframe est retirée au plus tard après ce délai. */
 const CLEANUP_TIMEOUT_MS = 60_000
@@ -70,25 +73,25 @@ const TICKET_CSS = `
 html,body{background:#fff;color:#000}
 body{font:800 12px/1.3 ui-monospace,Menlo,Consolas,'DejaVu Sans Mono','Liberation Mono','Courier New',monospace;-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-text-stroke:.2px #000}
 .ticket{max-width:${MAX_CONTENT_WIDTH_MM}mm;margin:0 ${SIDE_MARGIN_MM}mm;padding-bottom:1mm}
-.brand{text-align:center}
+.brand{padding-right:${TEXT_RIGHT_INSET_MM}mm;text-align:center}
 .logo{display:block;height:15mm;width:auto;margin:0 auto 1mm;filter:grayscale(1) brightness(.8) contrast(12)}
 .contact{font-size:11px}
-.ref{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:0 2mm;margin-top:1.5mm;padding:1mm 0;border-top:2px solid #000;border-bottom:2px solid #000}
+.ref{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:0 2mm;margin-top:1.5mm;padding:1mm ${TEXT_RIGHT_INSET_MM}mm 1mm 0;border-top:2px solid #000;border-bottom:2px solid #000}
 .ref span:last-child{font-size:11px;white-space:nowrap}
-.meta{display:grid;grid-template-columns:1fr 1fr;gap:1mm 3mm;margin-top:1.5mm}
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:1mm 3mm;margin-top:1.5mm;padding-right:${TEXT_RIGHT_INSET_MM}mm}
 .meta dt{font-size:11px;letter-spacing:.6px;text-transform:uppercase}
 .meta dd{overflow-wrap:anywhere}
 .lines{margin-top:1.5mm;border-top:1.5px solid #000}
-.row{display:flex;justify-content:space-between;gap:3mm;padding-top:1mm}
+.row{display:flex;justify-content:space-between;gap:3mm;padding:1mm ${TEXT_RIGHT_INSET_MM}mm 0 0}
 .name{min-width:0;overflow-wrap:anywhere}
 .name small{display:block;font-size:11px}
 .amount{flex:none;font-variant-numeric:tabular-nums}
 .sums{margin-top:1mm;border-top:1.5px dashed #000}
-.total{display:flex;justify-content:space-between;align-items:center;margin-top:1.5mm;padding:1.5mm 0;border-top:2px solid #000;border-bottom:2px solid #000;white-space:nowrap}
+.total{display:flex;justify-content:space-between;align-items:center;margin-top:1.5mm;padding:1.5mm ${TEXT_RIGHT_INSET_MM}mm 1.5mm 0;border-top:2px solid #000;border-bottom:2px solid #000;white-space:nowrap}
 .total span:first-child{font-size:12px;letter-spacing:1.5px}
 .total span:last-child{font-size:16px;font-variant-numeric:tabular-nums}
-.qr{display:block;width:22mm;height:22mm;margin:2.5mm auto 1.5mm}
-.thanks{text-align:center}
+.qr{display:block;position:relative;left:-${TEXT_RIGHT_INSET_MM / 2}mm;width:22mm;height:22mm;margin:2.5mm auto 1.5mm}
+.thanks{padding-right:${TEXT_RIGHT_INSET_MM}mm;text-align:center}
 `
 
 export function buildTicketHtml(sale: SaleRow, shop: TicketShop | undefined, origin = ''): string {
