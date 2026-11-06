@@ -9,6 +9,7 @@ use App\Models\User;
 it('shows sales history page and filters by date range', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
     $shop = Shop::factory()->create();
+    $user->shops()->attach($shop);
 
     // Two sales on different dates
     $older = Sale::factory()->for($shop)->create([
@@ -41,6 +42,7 @@ it('shows sales history page and filters by date range', function () {
 it('can search sales by product name', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
     $shop = Shop::factory()->create();
+    $user->shops()->attach($shop);
 
     // Create a product and a sale containing that product
     $product = Product::factory()->create([
@@ -70,6 +72,7 @@ it('can search sales by product name', function () {
 it('can search sales by service name', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
     $shop = Shop::factory()->create();
+    $user->shops()->attach($shop);
 
     // Create a service and a sale containing that service
     $service = Service::factory()->create([

@@ -28,6 +28,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::prefix('shops/{shop}')
         ->as('shops.')
+        ->middleware('shop.access')
+        ->scopeBindings()
         ->group(function () {
             // Shop scoped shop-menu
             Route::get('shop-menu', fn ($shop) => Inertia::render('shop-menu'))
@@ -43,6 +45,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Client suggestions for autocomplete (name & phone)
             Route::get('sales/client-suggestions', [SaleController::class, 'clientSuggestions'])
                 ->name('sales.client-suggestions');
+            Route::get('sales/{sale}/qr', [SaleController::class, 'qr'])->name('sales.qr');
             Route::resource('sales', SaleController::class)->only(['index', 'store', 'update', 'show', 'destroy']);
 
             // Reports routes

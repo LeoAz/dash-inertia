@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use Database\Factories\SaleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Validation\ValidationException;
 
 class Sale extends Model
 {
-    /** @use HasFactory<\Database\Factories\SaleFactory> */
+    /** @use HasFactory<SaleFactory> */
     use HasFactory;
 
     protected $casts = [
@@ -18,6 +20,20 @@ class Sale extends Model
         'total_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
     ];
+
+    /**
+     * Texte encodé dans le QR code du reçu. Le ticket part avec le client :
+     * aucune donnée personnelle (nom, téléphone) ne doit y figurer.
+     */
+    public function receiptQrContent(): string
+    {
+        return implode("\n", [
+            (string) $this->shop?->name,
+            'Reçu '.($this->receipt?->receipt_number ?? $this->id),
+            (string) $this->sale_date?->format('d/m/Y H:i'),
+            'Total '.number_format((float) $this->total_amount, 0, ',', ' ').' F CFA',
+        ]);
+    }
 
     public function user()
     {
@@ -86,7 +102,7 @@ class Sale extends Model
             if ($mustCheckActive && ! $promotion->isActiveForDate($date)) {
                 // If the user explicitly selected this promotion, surface a validation error for the UI (Sonner)
                 if ($explicitlySelected) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
+                    throw ValidationException::withMessages([
                         'promotion' => __('Cette promotion n’est pas active pour la date sélectionnée.'),
                     ]);
                 }
@@ -115,7 +131,7 @@ class Sale extends Model
 
             // If no eligible items in the sale, raise a validation error for the UI to consume
             if ($eligibleBase <= 0) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'promotion' => __('Cette promotion ne peut pas être appliquée à cette vente.'),
                 ]);
             }

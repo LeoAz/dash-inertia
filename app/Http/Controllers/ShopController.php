@@ -55,11 +55,15 @@ class ShopController extends Controller
 
     public function create(Request $request): InertiaResponse
     {
+        abort_unless($request->user()?->hasRole('Super admin'), 403);
+
         return Inertia::render('shop/create');
     }
 
     public function store(StoreShopRequest $request): RedirectResponse
     {
+        abort_unless($request->user()?->hasRole('Super admin'), 403);
+
         Shop::query()->create($request->validated());
 
         return redirect()->route('admin.shops.index')
@@ -68,6 +72,8 @@ class ShopController extends Controller
 
     public function show(Request $request, Shop $shop): InertiaResponse
     {
+        $this->ensureCanManage($request, $shop);
+
         return Inertia::render('shop/show', [
             'shop' => ShopResource::make($shop),
         ]);
@@ -75,6 +81,8 @@ class ShopController extends Controller
 
     public function edit(Request $request, Shop $shop): InertiaResponse
     {
+        $this->ensureCanManage($request, $shop);
+
         return Inertia::render('shop/edit', [
             'shop' => ShopResource::make($shop),
         ]);
@@ -82,6 +90,8 @@ class ShopController extends Controller
 
     public function update(UpdateShopRequest $request, Shop $shop): RedirectResponse
     {
+        $this->ensureCanManage($request, $shop);
+
         $shop->update($request->validated());
 
         return redirect()->route('admin.shops.index')
@@ -97,5 +107,16 @@ class ShopController extends Controller
 
         return redirect()->route('admin.shops.index')
             ->with('success', 'Shop deleted successfully.');
+    }
+
+    /**
+     * Only a Super admin, or an admin attached to the shop, may manage it.
+     */
+    private function ensureCanManage(Request $request, Shop $shop): void
+    {
+        $user = $request->user();
+        $isManager = ($user?->hasAnyRole(['Super admin', 'admin']) ?? false) && $user->canAccessShop($shop->id);
+
+        abort_unless($isManager, 403);
     }
 }

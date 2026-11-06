@@ -8,6 +8,7 @@ it('returns unique client suggestions (name + phone) for a shop', function () {
     $shop = Shop::factory()->create();
     $otherShop = Shop::factory()->create();
     $user = User::factory()->create();
+    $user->shops()->syncWithoutDetaching([$shop->id]);
     $this->actingAs($user);
 
     // Duplicate pairs in same shop
