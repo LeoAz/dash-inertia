@@ -30,6 +30,7 @@ it('validates when creating a shop', function () {
 
 it('creates a shop and redirects', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
+    $user->assignRole(Role::findOrCreate('Super admin'));
 
     $this->actingAs($user);
 
@@ -54,6 +55,7 @@ it('creates a shop and redirects', function () {
 
 it('updates a shop and redirects', function () {
     $user = User::factory()->create();
+    $user->assignRole(Role::findOrCreate('Super admin'));
     $shop = Shop::factory()->create([
         'name' => 'Ancien nom',
         'email' => 'old@example.com',

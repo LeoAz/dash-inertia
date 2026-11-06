@@ -28,6 +28,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::prefix('shops/{shop}')
         ->as('shops.')
+        ->middleware('shop.access')
+        ->scopeBindings()
         ->group(function () {
             // Shop scoped shop-menu
             Route::get('shop-menu', fn ($shop) => Inertia::render('shop-menu'))

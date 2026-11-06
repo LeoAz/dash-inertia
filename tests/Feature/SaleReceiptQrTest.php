@@ -4,11 +4,12 @@ use App\Models\Receipt;
 use App\Models\Sale;
 use App\Models\Shop;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 it('serves the receipt QR code as an SVG image', function () {
     $sale = Sale::factory()->for(Shop::factory())->create();
 
-    $response = $this->actingAs(User::factory()->create())
+    $response = $this->actingAs(User::factory()->create()->assignRole(Role::findOrCreate('Super admin')))
         ->get(route('shops.sales.qr', [$sale->shop_id, $sale]));
 
     $response->assertOk()->assertHeader('Content-Type', 'image/svg+xml');
@@ -26,7 +27,7 @@ it('returns 404 for a sale that belongs to another shop', function () {
     $sale = Sale::factory()->for(Shop::factory())->create();
     $otherShop = Shop::factory()->create();
 
-    $this->actingAs(User::factory()->create())
+    $this->actingAs(User::factory()->create()->assignRole(Role::findOrCreate('Super admin')))
         ->get(route('shops.sales.qr', [$otherShop, $sale]))
         ->assertNotFound();
 });
