@@ -12,8 +12,14 @@ use App\Models\Receipt;
 use App\Models\Sale;
 use App\Models\Service;
 use App\Models\Shop;
+use BaconQrCode\Common\ErrorCorrectionLevel;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -144,6 +150,24 @@ class SaleController extends Controller
         ];
 
         return response()->json($data);
+    }
+
+    /**
+     * QR code of a receipt, as an image for the printed ticket.
+     */
+    public function qr(Shop $shop, Sale $sale): HttpResponse
+    {
+        abort_if((int) $sale->shop_id !== (int) $shop->id, 404);
+
+        $sale->loadMissing(['shop:id,name', 'receipt']);
+
+        $writer = new Writer(new ImageRenderer(new RendererStyle(240, 0), new SvgImageBackEnd));
+
+        return response(
+            $writer->writeString($sale->receiptQrContent(), 'UTF-8', ErrorCorrectionLevel::M()),
+            200,
+            ['Content-Type' => 'image/svg+xml'],
+        );
     }
 
     /**
