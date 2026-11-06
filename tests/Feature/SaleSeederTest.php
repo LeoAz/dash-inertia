@@ -6,9 +6,6 @@ use Database\Seeders\PromotionSeeder;
 use Database\Seeders\SaleSeeder;
 use Database\Seeders\ServiceSeeder;
 use Database\Seeders\ShopSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 it('seeds sales with line items and optional promotions', function () {
     // Ensure base data

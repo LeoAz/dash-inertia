@@ -3,9 +3,6 @@
 use App\Models\Hairdresser;
 use Database\Seeders\HairdresserSeeder;
 use Database\Seeders\ShopSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 it('seeds hairdressers when shops exist', function () {
     // Seed shops first

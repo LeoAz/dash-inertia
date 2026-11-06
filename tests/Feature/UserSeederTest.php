@@ -2,10 +2,7 @@
 
 use App\Models\User;
 use Database\Seeders\UserSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-
-uses(RefreshDatabase::class);
 
 it('seeds users using UserSeeder', function () {
     expect(User::count())->toBe(0);

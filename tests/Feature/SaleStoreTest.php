@@ -6,9 +6,6 @@ use App\Models\Sale;
 use App\Models\Service;
 use App\Models\Shop;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 it('stores a sale with products and services and computes totals', function () {
     $shop = Shop::factory()->create();

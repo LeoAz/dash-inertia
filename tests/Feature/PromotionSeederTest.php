@@ -3,9 +3,6 @@
 use App\Models\Promotion;
 use Database\Seeders\PromotionSeeder;
 use Database\Seeders\ShopSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 it('seeds promotions for existing shops', function () {
     // Seed shops first

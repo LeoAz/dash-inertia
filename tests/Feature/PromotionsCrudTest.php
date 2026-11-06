@@ -68,9 +68,6 @@ it('updates with percentage only (amount omitted) sets amount to 0', function ()
 use App\Models\Promotion;
 use App\Models\Shop;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 function actingAsUserWithShop(): array
 {

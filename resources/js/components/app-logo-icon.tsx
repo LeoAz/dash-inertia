@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import { ImgHTMLAttributes } from 'react';
 
 export default function AppLogoIcon(props: ImgHTMLAttributes<HTMLImageElement>) {
@@ -6,6 +7,7 @@ export default function AppLogoIcon(props: ImgHTMLAttributes<HTMLImageElement>) 
             src="/img/logo%201.png"
             alt={props.alt ?? 'Logo'}
             {...props}
+            className={cn('mix-blend-multiply dark:mix-blend-screen dark:invert', props.className)}
         />
     );
 }

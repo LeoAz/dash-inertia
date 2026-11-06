@@ -3,9 +3,6 @@
 use App\Models\Sale;
 use App\Models\Shop;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 it('returns unique client suggestions (name + phone) for a shop', function () {
     $shop = Shop::factory()->create();

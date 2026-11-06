@@ -7,9 +7,6 @@ use App\Models\Service;
 use App\Models\Shop;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Tests\TestCase;
-
-uses(TestCase::class, Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 function makeShop(): Shop
 {
@@ -72,7 +69,7 @@ function makePromotion(Shop $shop, array $attrs = []): Promotion
 beforeEach(function () {
     // Ensure Str helper is available in this file
     if (! class_exists(Str::class)) {
-        class_alias(\Illuminate\Support\Str::class, 'Str');
+        class_alias(Str::class, 'Str');
     }
 });
 

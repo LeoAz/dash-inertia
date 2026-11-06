@@ -3,9 +3,6 @@
 use App\Models\Hairdresser;
 use App\Models\Shop;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 function actingInShop(): array
 {

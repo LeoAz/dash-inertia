@@ -2,6 +2,7 @@ import ShopConfigLayout from '@/layouts/app/shop-config-layout';
 import { Head, router, useForm } from '@inertiajs/react';
 import type { Product, ProductPageProps } from '@/types/product';
 import { Button } from '@/components/ui/button';
+import { formatCurrency } from '@/lib/thermal-ticket';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
@@ -55,7 +56,7 @@ export default function ProductsIndex({ products, shop }: ProductPageProps) {
                   </TableCell>
                   <TableCell className="py-2 font-medium">{p.name}</TableCell>
                   <TableCell className="py-2">{p.quantity}</TableCell>
-                  <TableCell className="py-2">{Number(p.price).toFixed(2)}</TableCell>
+                  <TableCell className="py-2">{formatCurrency(Number(p.price))}</TableCell>
                   <TableCell className="py-2">{p.description ?? '—'}</TableCell>
                   <TableCell className="py-2 text-right">
                     <div className="flex items-center justify-end gap-2">

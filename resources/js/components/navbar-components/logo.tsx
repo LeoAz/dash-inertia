@@ -3,7 +3,7 @@ export default function Logo() {
     <img
       src="/img/logo%201.png"
       alt="Logo"
-      className="inline-block h-8 w-auto md:h-9 object-contain"
+      className="inline-block h-10 w-auto object-contain mix-blend-multiply dark:mix-blend-screen dark:invert"
     />
   )
 }

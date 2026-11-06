@@ -1,11 +1,10 @@
 <?php
 
+use App\Models\Product;
 use App\Models\Sale;
+use App\Models\Service;
 use App\Models\Shop;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 it('shows sales history page and filters by date range', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
@@ -40,11 +39,11 @@ it('shows sales history page and filters by date range', function () {
 });
 
 it('can search sales by product name', function () {
-    $user = \App\Models\User::factory()->create(['email_verified_at' => now()]);
+    $user = User::factory()->create(['email_verified_at' => now()]);
     $shop = Shop::factory()->create();
 
     // Create a product and a sale containing that product
-    $product = \App\Models\Product::factory()->create([
+    $product = Product::factory()->create([
         'shop_id' => $shop->id,
         'name' => 'Shampoing Ultra',
     ]);
@@ -69,11 +68,11 @@ it('can search sales by product name', function () {
 });
 
 it('can search sales by service name', function () {
-    $user = \App\Models\User::factory()->create(['email_verified_at' => now()]);
+    $user = User::factory()->create(['email_verified_at' => now()]);
     $shop = Shop::factory()->create();
 
     // Create a service and a sale containing that service
-    $service = \App\Models\Service::factory()->create([
+    $service = Service::factory()->create([
         'shop_id' => $shop->id,
         'name' => 'Brushing Deluxe',
     ]);

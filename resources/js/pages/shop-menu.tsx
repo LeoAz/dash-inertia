@@ -1,6 +1,6 @@
 import AppHeaderLayout from '@/layouts/app/app-header-layout'
 import { Head, Link, usePage } from '@inertiajs/react'
-import { LayoutDashboard, ShoppingCart, BarChart3, History, Package, Scissors, Percent } from 'lucide-react'
+import { LayoutDashboard, ShoppingCart, BarChart3, History, Package, Scissors, Percent, Users } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import type { NavItem } from '@/types'
 import { index as salesIndex } from '@/routes/shops/sales'
@@ -37,69 +37,53 @@ export default function ShopMenu() {
     return found?.name ?? ''
   })()
 
-  const baseItems: Array<NavItem & { color: string; iconBg?: string; description?: string }> = [
+  const baseItems: Array<NavItem & { description?: string }> = [
+    {
+      title: 'Vente',
+      href: '#',
+      icon: ShoppingCart,
+      description: 'Encaisser une vente rapidement',
+    },
     {
       title: 'Tableau de bord',
       href: '#',
       icon: LayoutDashboard,
-      color: 'bg-indigo-500/10',
-      iconBg: 'bg-indigo-500/20',
       description: 'Vue d’ensemble des indicateurs de la boutique',
     },
     {
       title: 'Produits',
       href: '#',
       icon: Package,
-      color: 'bg-amber-500/10',
-      iconBg: 'bg-amber-500/20',
       description: 'Gérer le catalogue des produits',
     },
     {
       title: 'Services',
       href: '#',
       icon: Scissors,
-      color: 'bg-violet-500/10',
-      iconBg: 'bg-violet-500/20',
       description: 'Créer et administrer les prestations',
     },
     {
       title: 'Personnel (Coiffeurs)',
       href: '#',
-      icon: Scissors,
-      color: 'bg-sky-500/10',
-      iconBg: 'bg-sky-500/20',
+      icon: Users,
       description: 'Gérer les membres du personnel et leurs profils',
     },
     {
       title: 'Promotions',
       href: '#',
       icon: Percent,
-      color: 'bg-fuchsia-500/10',
-      iconBg: 'bg-fuchsia-500/20',
       description: 'Mettre en place des remises et offres',
-    },
-    {
-      title: 'Vente',
-      href: '#',
-      icon: ShoppingCart,
-      color: 'bg-emerald-500/10',
-      iconBg: 'bg-emerald-500/20',
-      description: 'Encaisser une vente rapidement',
     },
     {
       title: 'Historique des ventes',
       href: '#',
       icon: History,
-      color: 'bg-cyan-500/10',
-      iconBg: 'bg-cyan-500/20',
       description: 'Consulter et rechercher les ventes passées',
     },
     {
       title: 'Rapport',
       href: '#',
       icon: BarChart3,
-      color: 'bg-rose-500/10',
-      iconBg: 'bg-rose-500/20',
       description: 'Analyser les performances (produits, chiffres)',
     },
   ]
@@ -124,29 +108,25 @@ export default function ShopMenu() {
   }
 
   return (
-    <AppHeaderLayout contentFullWidth contentClassName="px-18 sm:px-20 md:px-24 lg:px-28 mt-5">
+    <AppHeaderLayout>
       <Head title="Boutique - Menus" />
-      <section className="mx-auto max-w-7xl">
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-            {currentShopName ? `Bienvenue dans ${currentShopName} 👋` : 'Bienvenue dans votre boutique 👋'}
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground md:text-base">Choisissez une action pour continuer.</p>
+      <section>
+        <div className="mb-5">
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{currentShopName || 'Votre boutique'}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Choisissez une action pour continuer.</p>
         </div>
 
         {shops.length === 0 ? (
           <p className="text-muted-foreground">Aucune boutique associée.</p>
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-3">
             {items.map((item) => (
               <MenuCard
                 key={item.title}
-                href={item.href ?? '#'}
+                href={String(item.href ?? '#')}
                 title={item.title}
                 description={item.description}
-                icon={<item.icon className="h-10 w-10" />}
-                bg={item.color}
-                iconBg={item.iconBg}
+                icon={item.icon ? <item.icon className="size-6" /> : null}
               />
             ))}
           </div>
@@ -156,15 +136,15 @@ export default function ShopMenu() {
   )
 }
 
-function MenuCard({ href, title, description, icon, bg, iconBg }: { href: string; title: string; description?: string; icon: React.ReactNode; bg?: string; iconBg?: string }) {
+function MenuCard({ href, title, description, icon }: { href: string; title: string; description?: string; icon: React.ReactNode }) {
   return (
-    <Link href={href} className="block">
-      <Card className={`transition-colors hover:border-foreground/30 ${bg ?? ''}`}>
-        <CardContent className="flex items-start gap-5 p-6 min-h-[120px] md:min-h-[140px]">
-          <div className={`rounded-md p-3 ${iconBg ?? 'bg-muted/50'}`}>{icon}</div>
-          <div>
-            <div className="text-lg font-semibold leading-tight md:text-xl">{title}</div>
-            {description && <div className="mt-0.5 text-sm text-muted-foreground md:text-base">{description}</div>}
+    <Link href={href} prefetch className="block rounded-xl focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none">
+      <Card className="h-full py-0 transition-colors hover:border-brand active:bg-accent">
+        <CardContent className="flex items-center gap-4 p-4 md:p-5">
+          <div className="grid size-12 shrink-0 place-items-center rounded-lg bg-accent text-accent-foreground">{icon}</div>
+          <div className="min-w-0">
+            <div className="font-semibold">{title}</div>
+            {description && <div className="mt-0.5 text-sm text-muted-foreground">{description}</div>}
           </div>
         </CardContent>
       </Card>

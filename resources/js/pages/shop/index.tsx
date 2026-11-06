@@ -162,7 +162,7 @@ function ShopFormModal({ mode, open, onOpenChange, shop }: { mode: 'create' | 'e
         <Form
           action={action}
           method={method as 'post' | 'put'}
-          preserveScroll
+          options={{ preserveScroll: true }}
           onSuccess={() => {
             onOpenChange(false)
             toast.success(isEdit ? 'Modification réussie' : 'Création réussie', { description: isEdit ? 'Boutique mise à jour.' : 'Boutique créée avec succès.' })

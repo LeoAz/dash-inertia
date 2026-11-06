@@ -4,9 +4,6 @@ use App\Models\Hairdresser;
 use App\Models\Sale;
 use App\Models\Shop;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 test('dashboard shows correct revenue including identical looking sales', function () {
     $shop = Shop::factory()->create();
