@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             ['email' => 'test@example.com'],
             [
                 'name' => 'Test User',
+                'username' => 'testuser',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
             ]
@@ -38,6 +39,22 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesSeeder::class,
         ]);
+
+        // 3b) Create one account per remaining role, to test each level of access
+        foreach (['admin' => 'Admin Test', 'vendeur' => 'Vendeur Test'] as $role => $name) {
+            $roleUser = User::firstOrCreate(
+                ['email' => "{$role}@example.com"],
+                [
+                    'name' => $name,
+                    'username' => $role,
+                    'password' => Hash::make('password'),
+                    'email_verified_at' => now(),
+                ]
+            );
+
+            $roleUser->assignRole($role);
+            $roleUser->shops()->syncWithoutDetaching(Shop::query()->orderBy('id')->limit(2)->pluck('id')->all());
+        }
 
         // 4) Seed additional users (factory will attach 1–2 shops automatically)
         $this->call([
