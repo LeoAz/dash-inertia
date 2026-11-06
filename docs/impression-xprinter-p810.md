@@ -18,7 +18,13 @@ Le ticket tient sur 68 mm de large, dans les 72 mm imprimables de la P810, et d�
 
 ## Si le papier continue de défiler après le reçu
 
-La longueur vient du format sélectionné. Vérifier dans la fenêtre d'impression de Chrome que le format est bien le rouleau, et non A4, Lettre ou 80 × 297 mm, puis que l'option d'avance papier en fin de document est désactivée dans le pilote.
+Chrome imprime toujours une feuille entière, de la longueur du format choisi : le ticket démarre en haut et le reste de la feuille sort vide. L'application ne peut pas raccourcir cette feuille. Le réglage se fait dans le pilote :
+
+- Choisir le format de rouleau le plus long proposé (exemple : 80 × 3276 mm), jamais A4, Lettre ou 80 × 297 mm
+- Désactiver l'option d'avance papier en fin de document
+- En dernier recours, créer un format personnalisé de 80 mm de large à la longueur d'un ticket courant
+
+Une courte bande vide reste normale : c'est la distance entre la tête d'impression et le coupe-papier.
 
 ## Si le bord droit du ticket est coupé
 

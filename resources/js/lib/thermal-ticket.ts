@@ -26,8 +26,12 @@ export interface TicketShop {
     address?: string | null
 }
 
+function formatAmount(value: number): string {
+    return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(value).replace(/\s/g, ' ')
+}
+
 export function formatCurrency(value: number): string {
-    return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 0 }).format(value).replace(/\s/g, ' ') + ' F CFA'
+    return `${formatAmount(value)} F CFA`
 }
 
 function escapeHtml(value: string): string {
@@ -50,8 +54,8 @@ function renderLine(line: TicketLine): string {
     const quantity = Number(line.quantity ?? 1)
     const unit = Number(line.unit_price ?? line.price ?? 0)
     return `<div class="row"><span class="name">${escapeHtml(line.name)}${
-        quantity > 1 ? `<small>${quantity} × ${formatCurrency(unit)}</small>` : ''
-    }</span><span class="amount">${formatCurrency(lineTotal(line))}</span></div>`
+        quantity > 1 ? `<small>${quantity} × ${formatAmount(unit)}</small>` : ''
+    }</span><span class="amount">${formatAmount(lineTotal(line))}</span></div>`
 }
 
 /**
@@ -65,7 +69,7 @@ const TICKET_CSS = `
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{background:#fff;color:#000}
 body{font:800 12px/1.3 ui-monospace,Menlo,Consolas,'DejaVu Sans Mono','Liberation Mono','Courier New',monospace;-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-text-stroke:.2px #000}
-.ticket{width:${CONTENT_WIDTH_MM}mm;margin-left:${CONTENT_LEFT_MM}mm;padding-bottom:3mm}
+.ticket{width:${CONTENT_WIDTH_MM}mm;margin-left:${CONTENT_LEFT_MM}mm;padding-bottom:1mm}
 .brand{text-align:center}
 .logo{display:block;height:15mm;width:auto;margin:0 auto 1mm;filter:grayscale(1) brightness(.8) contrast(12)}
 .contact{font-size:11px}
@@ -115,9 +119,9 @@ export function buildTicketHtml(sale: SaleRow, shop: TicketShop | undefined, ori
 <div class="ref"><span>REÇU ${escapeHtml(receipt)}</span><span>${format(new Date(sale.sale_date), 'dd/MM/yyyy HH:mm', { locale: fr })}</span></div>
 ${meta ? `<dl class="meta">${meta}</dl>` : ''}
 ${lines.length ? `<div class="lines">${lines.map(renderLine).join('')}</div>` : ''}
-${discount > 0 ? `<div class="sums"><div class="row"><span>Sous-total</span><span class="amount">${formatCurrency(subtotal)}</span></div>
-<div class="row"><span class="name">Remise · ${escapeHtml(String(sale.promotion_label))}</span><span class="amount">-${formatCurrency(discount)}</span></div></div>` : ''}
-<div class="total"><span>TOTAL</span><span>${formatCurrency(total)}</span></div>
+${discount > 0 ? `<div class="sums"><div class="row"><span>Sous-total</span><span class="amount">${formatAmount(subtotal)}</span></div>
+<div class="row"><span class="name">Remise · ${escapeHtml(String(sale.promotion_label))}</span><span class="amount">-${formatAmount(discount)}</span></div></div>` : ''}
+<div class="total"><span>TOTAL</span><span>${formatAmount(total)}</span></div>
 <img class="qr" src="${escapeHtml(qrCode)}" alt="" onerror="this.remove()">
 <div class="thanks">Merci pour votre visite !<br>À très bientôt</div>
 </div></body></html>`
